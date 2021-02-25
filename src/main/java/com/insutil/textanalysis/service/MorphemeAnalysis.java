@@ -1,7 +1,7 @@
 package com.insutil.textanalysis.service;
 
 import com.insutil.textanalysis.common.model.PosPair;
-import com.insutil.textanalysis.common.util.PosTagging;
+import com.insutil.textanalysis.common.analysis.PosTagging;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

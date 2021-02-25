@@ -1,9 +1,12 @@
-package com.insutil.textanalysis.common.util;
+package com.insutil.textanalysis.common.analysis;
 
 import com.insutil.textanalysis.common.model.PosPair;
+import com.insutil.textanalysis.common.util.GetMessageComponent;
 import kr.co.shineware.nlp.komoran.constant.DEFAULT_MODEL;
 import kr.co.shineware.nlp.komoran.core.Komoran;
 import kr.co.shineware.nlp.komoran.model.KomoranResult;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.ClassPathResource;
@@ -14,7 +17,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @PropertySource("classpath:analysis.properties")
+@RequiredArgsConstructor
 @Component
 public class PosTagging {
     @Value("${user.dic}")
@@ -23,15 +28,18 @@ public class PosTagging {
     @Value("${interestedNounTags}")
     private String nounTags;
 
+    private final GetMessageComponent getMessageComponent;
+
     private Komoran komoran;
 
     @PostConstruct
-    public void init() throws IOException {
+    public void init() {
         komoran = new Komoran(DEFAULT_MODEL.FULL);
-        ClassPathResource resource = new ClassPathResource(userDicFilePath);
-        String path = resource.getFile().getAbsolutePath();
-        komoran.setUserDic(path);
-
+        try {
+            komoran.setUserDic((new ClassPathResource(userDicFilePath)).getFile().getAbsolutePath());
+        } catch(IOException e) {
+            log.error(getMessageComponent.getMessage("analysis.fail.user.dic", new String[]{userDicFilePath}));
+        }
     }
 
     public List<PosPair> tagPos(String text) {

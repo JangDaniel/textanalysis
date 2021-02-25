@@ -8,7 +8,7 @@ import java.util.concurrent.Executor;
 
 @Configuration
 public class AsyncThreadPool {
-    @Bean(name = "asyncExecutor")
+    @Bean(name = "asyncPool")
     public Executor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(4);
@@ -18,4 +18,6 @@ public class AsyncThreadPool {
         executor.initialize();
         return executor;
     }
+
+
 }
