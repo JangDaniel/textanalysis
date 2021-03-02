@@ -38,7 +38,7 @@ public class PosTagging {
         try {
             komoran.setUserDic((new ClassPathResource(userDicFilePath)).getFile().getAbsolutePath());
         } catch(IOException e) {
-            log.error(getMessageComponent.getMessage("analysis.fail.user.dic", new String[]{userDicFilePath}));
+            log.error(getMessageComponent.getMessage("analysis.fail.user.dic", userDicFilePath));
         }
     }
 
