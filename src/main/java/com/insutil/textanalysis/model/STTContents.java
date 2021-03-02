@@ -1,14 +1,17 @@
 package com.insutil.textanalysis.model;
 
+import com.fasterxml.jackson.databind.ser.Serializers;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 
 @Data
-public class STTContents {
+public class STTContents extends BaseModel {
+	@Id
 	private Long id;
 	private String uniquekey;
 	private String contractNo;
@@ -23,10 +26,6 @@ public class STTContents {
 	private String customerTelNum;
 	private Long productId;
 	private Long stateCode;
-	private Long registUser;
-	private Long updateUser;
-	private LocalDateTime registDate;
-	private LocalDateTime updateDate;
 
 	public STTContents update(STTContents data) {
 		if (data.uniquekey != null) this.uniquekey = data.uniquekey;

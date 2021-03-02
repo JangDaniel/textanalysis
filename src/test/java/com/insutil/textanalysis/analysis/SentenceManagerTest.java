@@ -6,6 +6,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.security.InvalidParameterException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -156,9 +158,10 @@ class SentenceManagerTest {
 
         try {
             List<String> agentSentences = sentenceManager.extractAgentSentence(testData);
-            agentSentences.stream()
-                    .map(s -> sentenceManager.extractNoun(s))
-                    .forEach(System.out::println);
+            Map<String, String> result = agentSentences.stream()
+                    .collect(Collectors.toMap(s -> s,
+                            s -> sentenceManager.extractNoun(s),
+                            (existingKey, newKey) -> existingKey));
 
         } catch (InvalidParameterException e) {
 

@@ -32,10 +32,12 @@ public class SentenceManager {
 
     }
 
-    public Map<String, List<String>> extractNoun(final String sentence) throws InvalidParameterException {
+    public String extractNoun(final String sentence) throws InvalidParameterException {
         if (!StringUtils.hasLength(sentence))
             throw new InvalidParameterException();
-        return Map.of(sentence, posTagging.extractNounTag(sentence));
+        return "[" + posTagging.extractNounTag(sentence)
+                .stream()
+                .collect(Collectors.joining(",")) + "]";
     }
 
 
