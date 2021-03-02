@@ -40,8 +40,6 @@ public class MorphemeAnalysisHandler implements InitializingBean, DisposableBean
         return true;
     }
 
-
-    // 이게 기능 하는지 현재 확인 안됨.
     @Override
     public void destroy() throws Exception {
         log.info("shutdown");

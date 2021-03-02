@@ -5,6 +5,7 @@ import com.insutil.textanalysis.common.util.GetMessageComponent;
 import kr.co.shineware.nlp.komoran.constant.DEFAULT_MODEL;
 import kr.co.shineware.nlp.komoran.core.Komoran;
 import kr.co.shineware.nlp.komoran.model.KomoranResult;
+import kr.co.shineware.nlp.komoran.model.Token;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +29,7 @@ public class PosTagging {
 
     @Value("${interestedNounTags}")
     private String nounTags;
+
 
     private final GetMessageComponent getMessageComponent;
 
@@ -47,5 +50,10 @@ public class PosTagging {
         return result.getList().stream()
                 .map(pair -> new PosPair(pair.getFirst(), pair.getSecond()))
                 .collect(Collectors.toList());
+    }
+
+    public List<String> extractNounTag(String text) {
+        KomoranResult result = komoran.analyze(text);
+        return result.getNouns();
     }
 }
