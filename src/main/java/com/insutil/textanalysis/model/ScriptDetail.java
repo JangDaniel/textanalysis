@@ -2,11 +2,12 @@ package com.insutil.textanalysis.model;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-@With
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(value = "t_ta_script_detail")
@@ -23,21 +24,24 @@ public class ScriptDetail {
 	private Integer sort;
 	private String script;
 	private Integer score;
-	private String mandatoryWords;
 	private Long registUser;
 	private Long updateUser;
 	private LocalDateTime registDate;
 	private LocalDateTime updateDate;
 	private Boolean enabled;
 
+	@Transient
+	@With
+	private List<ScriptDetailMainWord> mainWords;
+
 	public ScriptDetail update(ScriptDetail scriptDetail) {
 		if (scriptDetail.criterionId != null) this.criterionId = scriptDetail.criterionId;
 		if (scriptDetail.sort != null) this.sort = scriptDetail.sort;
 		if (scriptDetail.script != null) this.script = scriptDetail.script;
-		if (scriptDetail.mandatoryWords != null) this.mandatoryWords = scriptDetail.mandatoryWords;
 		if (scriptDetail.updateUser != null) this.updateUser = scriptDetail.updateUser;
 		if (scriptDetail.score != null) this.score = scriptDetail.score;
 		if (scriptDetail.enabled != null) this.enabled = scriptDetail.enabled;
+		if (scriptDetail.mainWords != null) this.mainWords = scriptDetail.mainWords;
 
 		return this;
 	}
@@ -48,7 +52,6 @@ CREATE TABLE `t_ta_script_detail` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `criterion_id` int(11) NOT NULL,
   `script` mediumtext DEFAULT NULL,
-  `mandatory_words` varchar(256) DEFAULT NULL,
   `sort` int(2) DEFAULT 1,
   `score` int(2) DEFAULT NULL,
   `regist_user` int(11) NOT NULL,
