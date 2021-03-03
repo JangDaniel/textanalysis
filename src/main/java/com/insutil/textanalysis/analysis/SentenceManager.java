@@ -1,8 +1,7 @@
 package com.insutil.textanalysis.analysis;
 
 import com.insutil.textanalysis.common.analysis.PosTagging;
-import com.insutil.textanalysis.model.STTContents;
-import com.insutil.textanalysis.repository.STTContentsRepository;
+import com.insutil.textanalysis.repository.SttContentsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -10,14 +9,13 @@ import org.springframework.util.StringUtils;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 public class SentenceManager {
 
-    private final STTContentsRepository sttContentsRepository;
+    private final SttContentsRepository sttContentsRepository;
     private final PosTagging posTagging;
 
     public List<String> extractAgentSentence(final String contents) throws InvalidParameterException {
@@ -28,6 +26,7 @@ public class SentenceManager {
                 .stream()
                 .filter(s -> s.startsWith("A"))
                 .map(s -> s.replaceFirst("^A:\\[‡\\d+‡\\]", ""))
+                .filter(s -> s.length() > 10)
                 .collect(Collectors.toList());
 
     }

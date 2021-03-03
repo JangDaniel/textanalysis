@@ -8,14 +8,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @Slf4j
 @SpringBootTest
 class STTContentsRepositoryTest {
 
     @Autowired
-    STTContentsRepository sttContentsRepository;
+    SttContentsRepository sttContentsRepository;
 
 
     @Test

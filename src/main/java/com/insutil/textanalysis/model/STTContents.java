@@ -6,10 +6,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
 @Data
+@Table(value = "t_ta_stt_contents")
 public class STTContents extends BaseModel {
 	@Id
 	private Long id;

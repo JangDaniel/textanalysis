@@ -16,11 +16,12 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@PropertySource("classpath:analysis.properties")
+@PropertySource(value = {"classpath:analysis.properties"}, encoding = "UTF-8")
 @RequiredArgsConstructor
 @Component
 public class PosTagging {
@@ -30,6 +31,8 @@ public class PosTagging {
     @Value("${interestedNounTags}")
     private String nounTags;
 
+    @Value("${postPosTag}")
+    private List<String> posTags;
 
     private final GetMessageComponent getMessageComponent;
 
@@ -48,12 +51,13 @@ public class PosTagging {
     public List<PosPair> tagPos(String text) {
         KomoranResult result = komoran.analyze(text);
         return result.getList().stream()
+                .filter(pair -> !posTags.contains(pair.getFirst()))
                 .map(pair -> new PosPair(pair.getFirst(), pair.getSecond()))
                 .collect(Collectors.toList());
     }
 
     public List<String> extractNounTag(String text) {
         KomoranResult result = komoran.analyze(text);
-        return result.getNouns();
+        return result.getNouns().stream().filter(s -> !posTags.contains(s)).collect(Collectors.toList());
     }
 }

@@ -4,7 +4,8 @@ import com.insutil.textanalysis.analysis.SentenceManager;
 import com.insutil.textanalysis.common.util.DateTimeUtil;
 import com.insutil.textanalysis.model.STTContents;
 import com.insutil.textanalysis.model.SttSentences;
-import com.insutil.textanalysis.repository.STTContentsRepository;
+import com.insutil.textanalysis.repository.SttContentsRepository;
+import com.insutil.textanalysis.repository.SttSentencesRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.PropertySource;
@@ -32,37 +33,73 @@ public class ScheduleTask {
 
     private final SentenceManager sentenceManager;
 
-    private final STTContentsRepository sttContentsRepository;
+    private final SttContentsRepository sttContentsRepository;
+
+    private final SttSentencesRepository sttSentencesRepository;
+
+    private final static int cores = Runtime.getRuntime().availableProcessors() / 2;
 
     // 수동 모드 1) 문장 분리 T_TA_STT_CONTENTS => T_TA_STT_SENTENCES
     @Scheduled(fixedDelayString = "${analysis.fixed.delay}")
     public void preparedAnalysis() {
-        if(!atomicInteger.compareAndSet(0, 1))
+        if (!atomicInteger.compareAndSet(0, 1))
             return;
         log.info("preparedAnalysis()");
         Flux<STTContents> sttContentsFlux = sttContentsRepository.findSTTContentsByCallDateAndStateCode(DateTimeUtil.getNowCallDate(), 33);
 
-        String result = sttContentsFlux
-                .parallel(4)
-                .runOn(Schedulers.newParallel("analysis", 4))
-                .map(data -> {
-                    makeSentencesData(data);
-                    return "";
-                })
+        sttContentsFlux
+                .parallel()
+                .runOn(Schedulers.parallel())
+                .filter(data -> data.getSttText().length() > 10)
+                .doOnNext(data -> onGoingMorphemeAnalysis(data.getId()))
+                .map(data -> makeSentencesData(data))
                 .sequential()
-                .blockLast();
+                .publishOn(Schedulers.single())
+                .subscribe(data -> {
+                    data.stream().forEach(d -> {
+                        log.info("saving... {}", d);
+                        try {
+                            sttSentencesRepository.save(d).subscribe();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    });
+                });
+
+        log.info("complete...");
         // T_TA_STT_CONTENTS 테이블에서 분석 대상인 데이터 추출해서, T_TA_STT_SENTENCES에 입력
+//        atomicInteger.set(0);
     }
 
-    private void makeSentencesData(STTContents data) {
+    private void onGoingMorphemeAnalysis(long id) {
+        sttContentsRepository.updateStateCode(35, id)
+                .subscribe();
+    }
+
+    private List<SttSentences> makeSentencesData(STTContents data) {
+        log.info("working ... {}", data.getId());
+
         List<SttSentences> sttSentencesList = new ArrayList<>();
+
         List<String> agentSentences = sentenceManager.extractAgentSentence(data.getSttText());
         Map<String, String> result = agentSentences.stream()
                 .collect(Collectors.toMap(s -> s,
                         s -> sentenceManager.extractNoun(s),
                         (existingKey, newKey) -> existingKey));
 
+        for (Map.Entry<String, String> elem : result.entrySet()) {
+            SttSentences sttSentences = new SttSentences();
+            sttSentences.setSttId(data.getId());
+            sttSentences.setUnitSentence(elem.getKey());
+            sttSentences.setMorpheme(elem.getValue());
+            sttSentencesList.add(sttSentences);
+            log.info("{}, {}", elem.getKey(), elem.getValue());
+        }
+        return sttSentencesList;
     }
+
+
 
     // 수동 모드 2) 형태소 분석
 
