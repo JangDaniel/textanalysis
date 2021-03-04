@@ -50,8 +50,7 @@ public class ScheduleTask {
         sttContentsFlux
                 .parallel()
                 .runOn(Schedulers.parallel())
-                .filter(data -> data.getSttText().length() > 10)
-                .doOnNext(data -> onGoingMorphemeAnalysis(data.getId()))
+                .doOnNext(data -> onGoingMorphemeAnalysis(data))
                 .map(data -> makeSentencesData(data))
                 .sequential()
                 .publishOn(Schedulers.single())
@@ -72,9 +71,14 @@ public class ScheduleTask {
 //        atomicInteger.set(0);
     }
 
-    private void onGoingMorphemeAnalysis(long id) {
-        sttContentsRepository.updateStateCode(35, id)
-                .subscribe();
+    private void onGoingMorphemeAnalysis(STTContents sttContents) {
+        if(sttContents.getSttText().length() > 10) {
+            sttContentsRepository.updateStateCode(35, sttContents.getId())
+                    .subscribe();
+        } else {
+            sttContentsRepository.updateStateCode(39, sttContents.getId())
+                    .subscribe();
+        }
     }
 
     private List<SttSentences> makeSentencesData(STTContents data) {
