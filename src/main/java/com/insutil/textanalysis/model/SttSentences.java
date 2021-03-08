@@ -18,6 +18,9 @@ public class SttSentences extends BaseModel {
     private Long id;
 
     private Long sttId;
+
+    private String callDate;
+
     private String unitSentence;
     private String morpheme;
     private Long scriptDetailId;

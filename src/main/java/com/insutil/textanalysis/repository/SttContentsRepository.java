@@ -12,11 +12,11 @@ import reactor.core.publisher.Mono;
 public interface SttContentsRepository extends R2dbcRepository<STTContents, Long> {
 
     @Query("select * from t_ta_stt_contents where call_date = :callDate and state_code = :stateCode")
-    Flux<STTContents> findSTTContentsByCallDateAndStateCode(String callDate, int stateCode);
+    Flux<STTContents> findSTTContentsByCallDateAndStateCode(String callDate, long stateCode);
 
     @Modifying
     @Query("update t_ta_stt_contents set state_code = :stateCode where id = :id")
-    Mono<Integer> updateStateCode(int stateCode, long id);
+    Mono<Integer> updateStateCode(long stateCode, long id);
 
 
 }
