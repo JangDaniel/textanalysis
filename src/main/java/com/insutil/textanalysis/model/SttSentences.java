@@ -9,7 +9,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @With
-@Data
+@Getter
+@Setter
 @Builder
 @Table(value = "t_ta_stt_sentences")
 public class SttSentences extends BaseModel {
@@ -18,6 +19,7 @@ public class SttSentences extends BaseModel {
     private Long id;
 
     private Long sttId;
+    private String contactNo;
     private String callDate;
     private String unitSentence;
     private String morpheme;
@@ -29,6 +31,7 @@ public class SttSentences extends BaseModel {
 CREATE TABLE `t_ta_stt_sentences` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `stt_id` int(11) NOT NULL,
+  `contact_no` varchar(12) NOT NULL,
   `call_date` varchar(8) NOT NULL,
   `unit_sentence` text NOT NULL,
   `morpheme` text NOT NULL,
@@ -39,6 +42,7 @@ CREATE TABLE `t_ta_stt_sentences` (
   `regist_date` datetime DEFAULT current_timestamp(),
   `update_date` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
-  KEY `t_ta_stt_sentences_call_date_IDX` (`call_date`) USING BTREE
+  KEY `t_ta_stt_sentences_call_date_IDX` (`call_date`) USING BTREE,
+  KEY `t_ta_stt_sentences_contact_no_IDX` (`contact_no`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
  */
