@@ -25,5 +25,13 @@ class STTContentsRepositoryTest {
 
     }
 
+    @Test
+    void findSTTContentsByContractNoTest() {
+        Flux<STTContents> sttContentsFlux = sttContentsRepository.findSTTContentsByContractNo("A19020174750");
+        sttContentsFlux.as(StepVerifier::create)
+                .expectNextCount(7)
+                .expectComplete()
+                .verify();
+    }
 
 }
