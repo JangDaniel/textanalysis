@@ -1,8 +1,8 @@
 package com.insutil.textanalysis.service;
 
 import com.insutil.textanalysis.analysis.SentenceManager;
-import com.insutil.textanalysis.common.model.PosPair;
 import com.insutil.textanalysis.common.analysis.PosTagging;
+import com.insutil.textanalysis.common.model.PosPair;
 import com.insutil.textanalysis.model.STTContents;
 import com.insutil.textanalysis.model.SttSentences;
 import com.insutil.textanalysis.repository.CodeRepository;
@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 import javax.annotation.PostConstruct;
 import java.security.InvalidParameterException;
@@ -49,12 +50,13 @@ public class MorphemeAnalysis {
         return posTagging.tagPos(sourceText);
     }
 
-    public Flux<STTContents> getMorphemeAnalysisTarget(final String callDate) {
-        Flux<STTContents> sttContentsFlux = sttContentsRepository.findSTTContentsByCallDateAndStateCode(callDate, codeWithBeforeMorphemeAnalysis);
-        return sttContentsFlux;
+    public Flux<STTContents> getMorphemeAnalysisTargetWithCallDate(final String callDate) {
+        return sttContentsRepository
+                .findSTTContentsByCallDateAndStateCode(callDate, codeWithBeforeMorphemeAnalysis);
     }
 
-    public List<SttSentences> makeSentencesData(STTContents data) {
+
+    public List<SttSentences> analysisMorpheme(STTContents data) {
         log.info("working ... {}", data.getId());
 
         List<SttSentences> sttSentencesList = new ArrayList<>();
@@ -81,25 +83,21 @@ public class MorphemeAnalysis {
         return sttSentencesList;
     }
 
-    public void saveSentenceData(final SttSentences sttSentences) {
-        try {
-            sttSentencesRepository.save(sttSentences).subscribe();
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
+    public Flux<SttSentences> saveSentenceData(final List<SttSentences> sttSentences) {
+        return sttSentencesRepository.saveAll(sttSentences);
     }
 
-    public void saveSentenceData(final List<SttSentences> sttSentences) {
-        try {
-            sttSentencesRepository.saveAll(sttSentences).subscribe();
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public boolean preparedAnalysisWithDate(final String callDate) {
+    public int preparedAnalysisWithDate(final String callDate) {
         // t_ta_stt_sentences callDate 건은 삭제
-        return true;
+        log.info("is going to delete result data in t_ta_stt_sentences with specific date = {}", callDate);
+        return sttSentencesRepository.deleteSttSentencesByCallDate(callDate)
+                .subscribeOn(Schedulers.parallel()).block();
     }
 
+    public Flux<SttSentences> analysisMorphemeWithSpecificContractNo(final String contractNo) {
+        return sttContentsRepository.findSTTContentsByContractNo(contractNo)
+                .flatMap(data -> Flux.just(analysisMorpheme(data)))
+                .flatMap(data -> saveSentenceData(data));
+//                .reduce((b, a) -> a && b);
+    }
 }

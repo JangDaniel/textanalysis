@@ -1,34 +1,20 @@
 package com.insutil.textanalysis.batch;
 
-import com.insutil.textanalysis.analysis.SentenceManager;
 import com.insutil.textanalysis.common.util.CodeIdUtil;
 import com.insutil.textanalysis.common.util.DateTimeUtil;
 import com.insutil.textanalysis.model.STTContents;
-import com.insutil.textanalysis.model.SttSentences;
-import com.insutil.textanalysis.repository.CodeRepository;
 import com.insutil.textanalysis.repository.SttContentsRepository;
-import com.insutil.textanalysis.repository.SttSentencesRepository;
 import com.insutil.textanalysis.service.MorphemeAnalysis;
-import kr.co.shineware.nlp.komoran.constant.DEFAULT_MODEL;
-import kr.co.shineware.nlp.komoran.core.Komoran;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
 import javax.annotation.PostConstruct;
-import java.io.IOException;
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -66,11 +52,11 @@ public class ScheduleTask {
             return;
 
         // T_TA_STT_CONTENTS 테이블에서 분석 대상인 데이터 추출해서, T_TA_STT_SENTENCES에 입력
-        morphemeAnalysis.getMorphemeAnalysisTarget(DateTimeUtil.getNowCallDate())
+        morphemeAnalysis.getMorphemeAnalysisTargetWithCallDate(DateTimeUtil.getNowCallDate())
                 .parallel()
                 .runOn(Schedulers.parallel())
                 .doOnNext(this::onGoingMorphemeAnalysis)    // 상태 전환
-                .map(morphemeAnalysis::makeSentencesData) // 문장 분리 및 형태소 분석
+                .map(morphemeAnalysis::analysisMorpheme) // 문장 분리 및 형태소 분석
                 .sequential()
                 .publishOn(Schedulers.single())
                 .subscribe(morphemeAnalysis::saveSentenceData); // t_ta_stt_sentences 형태소 분석 결과 입력
