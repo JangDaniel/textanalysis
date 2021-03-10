@@ -23,6 +23,7 @@ public class ScriptDetail {
 
 	private Integer sort;
 	private String script;
+	private String morpheme;
 	private Integer score;
 	private Long registUser;
 	private Long updateUser;
@@ -38,6 +39,7 @@ public class ScriptDetail {
 		if (scriptDetail.criterionId != null) this.criterionId = scriptDetail.criterionId;
 		if (scriptDetail.sort != null) this.sort = scriptDetail.sort;
 		if (scriptDetail.script != null) this.script = scriptDetail.script;
+		if (scriptDetail.morpheme != null) this.morpheme = scriptDetail.morpheme;
 		if (scriptDetail.updateUser != null) this.updateUser = scriptDetail.updateUser;
 		if (scriptDetail.score != null) this.score = scriptDetail.score;
 		if (scriptDetail.enabled != null) this.enabled = scriptDetail.enabled;

@@ -7,5 +7,5 @@ import reactor.core.publisher.Flux;
 
 @Repository
 public interface ScriptDetailMainWordRepository extends R2dbcRepository<ScriptDetailMainWord, Long> {
-	Flux<ScriptDetailMainWord> findAllByScriptDetailId(Long scriptDetailId);
+	Flux<ScriptDetailMainWord> findAllByScriptDetailIdAndEnabledIsTrue(Long scriptDetailId);
 }

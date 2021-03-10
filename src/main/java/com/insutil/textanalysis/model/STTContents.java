@@ -1,16 +1,19 @@
 package com.insutil.textanalysis.model;
 
 import com.fasterxml.jackson.databind.ser.Serializers;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+@Getter
+@Setter
+@Builder
 @Table(value = "t_ta_stt_contents")
 public class STTContents extends BaseModel {
 	@Id
@@ -28,6 +31,14 @@ public class STTContents extends BaseModel {
 	private String customerTelNum;
 	private Long productId;
 	private Long stateCode;
+
+	@Transient
+	@With
+	private Product product;
+
+	@Transient
+	@With
+	private User agent;
 
 	public STTContents update(STTContents data) {
 		if (data.uniquekey != null) this.uniquekey = data.uniquekey;
