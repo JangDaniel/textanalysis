@@ -1,5 +1,6 @@
 package com.insutil.textanalysis.handler;
 
+import com.insutil.textanalysis.analysis.SentenceManager;
 import com.insutil.textanalysis.model.ScriptCriterion;
 import com.insutil.textanalysis.model.ScriptDetail;
 import com.insutil.textanalysis.model.ScriptDetailMainWord;
@@ -23,6 +24,7 @@ public class ScriptHandler {
 	private final ScriptCriteriaRepository scriptCriteriaRepository;
 	private final ScriptDetailRepository scriptDetailRepository;
 	private final ScriptDetailMainWordRepository scriptDetailMainWordRepository;
+	private final SentenceManager sentenceManager;
 
 	public Mono<ServerResponse> getScriptCriteriaByProductId(ServerRequest request) {
 		String id = request.pathVariable("id");
@@ -36,7 +38,7 @@ public class ScriptHandler {
 						scriptDetailRepository.findAllByCriterionId(criteria.getId())
 							.flatMap(scriptDetail ->
 								Mono.just(scriptDetail)
-									.zipWith(scriptDetailMainWordRepository.findAllByScriptDetailId(scriptDetail.getId()).collectList())
+									.zipWith(scriptDetailMainWordRepository.findAllByScriptDetailIdAndEnabledIsTrue(scriptDetail.getId()).collectList())
 							)
 							.map(tuple -> tuple.getT1().withMainWords(tuple.getT2()))
 							.collectList()
@@ -57,7 +59,7 @@ public class ScriptHandler {
 						scriptDetailRepository.findAllByCriterionId(criteria.getId())
 							.flatMap(scriptDetail ->
 								Mono.just(scriptDetail)
-									.zipWith(scriptDetailMainWordRepository.findAllByScriptDetailId(scriptDetail.getId()).collectList())
+									.zipWith(scriptDetailMainWordRepository.findAllByScriptDetailIdAndEnabledIsTrue(scriptDetail.getId()).collectList())
 							)
 							.map(tuple -> tuple.getT1().withMainWords(tuple.getT2()))
 							.collectList()
@@ -102,7 +104,7 @@ public class ScriptHandler {
 						scriptDetailRepository.findAllByCriterionId(criteria.getId())
 							.flatMap(scriptDetail ->
 								Mono.just(scriptDetail)
-									.zipWith(scriptDetailMainWordRepository.findAllByScriptDetailId(scriptDetail.getId()).collectList())
+									.zipWith(scriptDetailMainWordRepository.findAllByScriptDetailIdAndEnabledIsTrue(scriptDetail.getId()).collectList())
 							)
 							.map(tuple -> tuple.getT1().withMainWords(tuple.getT2()))
 							.collectList()
@@ -127,6 +129,14 @@ public class ScriptHandler {
 						return scriptDetail;
 					})
 			)
+			.map(scriptDetail -> {
+				String script = scriptDetail.getScript();
+				if (!script.contains("$")) {
+					// script 에 object 가 없을 경우 미리 형태소분석을 해 놓는다
+					scriptDetail.setMorpheme(sentenceManager.extractNoun(scriptDetail.getScript()));
+				}
+				return scriptDetail;
+			})
 			.flatMap(scriptDetail ->
 				scriptDetailRepository.save(scriptDetail)
 					.flatMap(savedScriptDetail -> {
@@ -147,6 +157,18 @@ public class ScriptHandler {
 		return scriptDetailRepository.findById(Long.valueOf(id))
 			.flatMap(origin ->
 				request.bodyToMono(ScriptDetail.class)
+					.map(param -> {
+						// 형태소 분석된 script 의 경우 script 가 달라졌을 때 형태소 분석을 해 놓는다
+						if (origin.getScript().equals(param.getScript())) return param;
+						if (param.getScript().contains("$")) {
+							// script 가 달라졌는데 object 가 추가됐다면 기존 형태소 분석결과를 삭제한다.
+							param.setMorpheme("");
+						} else {
+							// 새로운 script 에 object 가 없는 경우에 형태소 분석을 한다
+							param.setMorpheme(sentenceManager.extractNoun(param.getScript()));
+						}
+						return param;
+					})
 					.map(origin::update)
 					.flatMap(updatedScriptDetail ->
 						scriptDetailRepository.save(updatedScriptDetail)
