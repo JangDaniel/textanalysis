@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.insutil</groupId>
     <artifactId>textanalysis</artifactId>
-    <version>0.0.1-ta</version>
+    <version>0.1.0</version>
     <name>inspenso</name>
     <description>Inspenso TA Service</description>
     <properties>
@@ -40,10 +40,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
