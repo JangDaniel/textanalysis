@@ -23,7 +23,7 @@ public class ScriptMatch {
 	private Long scriptDetailId;
 	private String mappedScript;
 	private Long sttSentenceId;
-	private Integer matchRate;
+	private Float similarityScore;
 	private Long registUser;
 	private Long updateUser;
 	private LocalDateTime registDate;
@@ -43,7 +43,7 @@ public class ScriptMatch {
 		if (target.scriptDetailId != null) this.scriptDetailId = target.scriptDetailId;
 		if (target.mappedScript != null) this.mappedScript = target.mappedScript;
 		if (target.sttSentenceId != null) this.sttSentenceId = target.sttSentenceId;
-		if (target.matchRate != null) this.matchRate = target.matchRate;
+		if (target.similarityScore != null) this.similarityScore = target.similarityScore;
 		if (target.updateUser != null) this.updateUser = target.updateUser;
 		if (target.enabled != null) this.enabled = target.enabled;
 
@@ -58,7 +58,7 @@ CREATE TABLE `t_ta_stt_script_match` (
   `script_detail_id` int(11) NOT NULL,
   `mapped_script` mediumtext DEFAULT NULL COMMENT '객체가 값으로 mapping 된 script',
   `stt_sentence_id` bigint(20) NOT NULL,
-  `match_rate` int(3) DEFAULT NULL,
+  `similarity_score` float DEFAULT NULL,
   `regist_user` int(11) DEFAULT NULL,
   `update_user` int(11) DEFAULT NULL,
   `regist_date` datetime DEFAULT current_timestamp(),
