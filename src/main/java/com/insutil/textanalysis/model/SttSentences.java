@@ -24,6 +24,7 @@ public class SttSentences extends BaseModel {
     private String unitSentence;
     private String morpheme;
     private Long scriptDetailId;
+    private String mappedScript;
     private BigDecimal similarityScore;
 }
 
@@ -36,6 +37,7 @@ CREATE TABLE `t_ta_stt_sentences` (
   `unit_sentence` text NOT NULL,
   `morpheme` text NOT NULL,
   `script_detail_id` int(11) DEFAULT NULL,
+  `mapped_script` mediumtext DEFAULT NULL,
   `similarity_score` float DEFAULT NULL,
   `regist_user` int(11) DEFAULT NULL,
   `update_user` int(11) DEFAULT NULL,
