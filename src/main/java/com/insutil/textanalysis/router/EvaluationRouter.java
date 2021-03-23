@@ -17,7 +17,7 @@ public class EvaluationRouter {
 			.GET("/api/evaluation/date/{callDate}", handler::findCallEvaluationsByDate)
 //			.POST("/api/evaluation", handler::saveCallEvaluation)// CallEvaluation 정보는 front-end에서 생성하지 않는다
 			.PUT("/api/evaluation/{id}", handler::updateSttEvaluation)
-			.GET("/api/evaluation/stt/{sttEvaluationId}/evaluations", handler::findSttEvaluationSummaries)
+			.GET("/api/evaluation/stt/{sttEvaluationId}", handler::findSttEvaluationSummaries)
 //			.GET("/api/evaluation/stt/{sttEvaluationId}/evaluations", handler::findSttEvaluationDetails)
 			.build();
 	}
