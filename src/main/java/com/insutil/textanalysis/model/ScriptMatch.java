@@ -18,8 +18,6 @@ import java.time.LocalDateTime;
 public class ScriptMatch {
 	@Id
 	private Long id;
-	private Long criterionEvaluationId;
-
 	private Long scriptDetailId;
 	private String mappedScript;
 	private Long sttSentenceId;
@@ -39,7 +37,6 @@ public class ScriptMatch {
 	private SttSentences sttSentence;
 
 	public ScriptMatch update(ScriptMatch target) {
-		if (target.criterionEvaluationId != null) this.criterionEvaluationId = target.criterionEvaluationId;
 		if (target.scriptDetailId != null) this.scriptDetailId = target.scriptDetailId;
 		if (target.mappedScript != null) this.mappedScript = target.mappedScript;
 		if (target.sttSentenceId != null) this.sttSentenceId = target.sttSentenceId;

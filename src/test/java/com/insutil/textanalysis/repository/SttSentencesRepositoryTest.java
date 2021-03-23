@@ -21,8 +21,7 @@ class SttSentencesRepositoryTest {
                 .callDate("20210308")
                 .unitSentence("고객님 아까 말씀 드린 것처럼 제가 주소지 는 변경 해 드렸구요 고객님")
                 .morpheme("[고객,말씀,제가,주소지,변경,고객]")
-                .scriptDetailId(null)
-                .similarityScore(null).build();
+                .build();
         sttSentencesRepository.save(sttSentences)
             .as(StepVerifier::create)
             .assertNext(d -> "[고객,말씀,제가,주소지,변경,고객]".equals(d.getMorpheme()))

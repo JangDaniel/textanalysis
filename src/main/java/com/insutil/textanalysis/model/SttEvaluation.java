@@ -10,13 +10,13 @@ import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(value = "t_ta_call_evaluation")
+@Table(value = "t_ta_stt_evaluation")
 @ToString
 @Getter
 @Setter
 @Builder
 //@EqualsAndHashCode(of = {"id"})
-public class CallEvaluation {
+public class SttEvaluation {
 	@Id
 	private Long id;
 	private Long sttId;
@@ -41,9 +41,17 @@ public class CallEvaluation {
 
 	@Transient
 	@With
-	private List<CriterionEvaluation> criterionEvaluations;
+	private List<CriterionEvaluation> criterionEvaluations; // for save or update
 
-	public CallEvaluation update(CallEvaluation target) {
+	@Transient
+	@With
+	private List<ScriptMatch> scriptMatches;
+
+	@Transient
+	@With
+	private List<CriterionEvaluationSummary> criterionEvaluationSummaries; // for read
+
+	public SttEvaluation update(SttEvaluation target) {
 		if (target.sttId != null) this.sttId = target.sttId;
 		if (target.stateId != null) this.stateId = target.stateId;
 		if (target.resultId != null) this.resultId = target.resultId;

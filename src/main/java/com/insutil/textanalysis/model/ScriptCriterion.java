@@ -8,7 +8,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@With
+
 @Table(value = "t_ta_script_criteria")
 @ToString
 @Getter
@@ -31,9 +31,11 @@ public class ScriptCriterion {
 	private Boolean enabled;
 
 	@Transient
+	@With
 	private List<ScriptDetail> scriptDetails;
 
 	@Transient
+	@With
 	private Integer childCount;
 
 	public ScriptCriterion update(ScriptCriterion scriptCriterion) {

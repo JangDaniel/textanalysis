@@ -19,7 +19,7 @@ import java.util.List;
 public class CriterionEvaluation {
 	@Id
 	private Long id;
-	private Long callEvaluationId;
+	private Long sttEvaluationId;
 
 	private Long criterionId;
 	private Integer score;
@@ -39,7 +39,7 @@ public class CriterionEvaluation {
 	private List<ScriptMatch> scriptMatches;
 
 	public CriterionEvaluation update(CriterionEvaluation target) {
-		if (target.callEvaluationId != null) this.callEvaluationId = target.callEvaluationId;
+		if (target.sttEvaluationId != null) this.sttEvaluationId = target.sttEvaluationId;
 		if (target.criterionId != null) this.criterionId = target.criterionId;
 		if (target.score != null) this.score = target.score;
 		if (target.opinion != null) this.opinion = target.opinion;
@@ -54,7 +54,7 @@ public class CriterionEvaluation {
 /* DDL
 CREATE TABLE `t_ta_stt_criterion_evaluation` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `call_evaluation_id` int(11) NOT NULL,
+  `stt_evaluation_id` int(11) NOT NULL,
   `criterion_id` int(11) NOT NULL,
   `score` int(3) DEFAULT NULL,
   `opinion` varchar(256) DEFAULT NULL,
