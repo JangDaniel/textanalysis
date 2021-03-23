@@ -47,6 +47,84 @@ public class EvaluationHandler {
 			.switchIfEmpty(ServerResponse.notFound().build());
 	}
 
+	protected Mono<STTContents> getSttContentsBySttId(Long sttId) {
+		return sttContentsRepository.findById(sttId)
+			.flatMap(sttContents ->
+				Mono.just(sttContents).zipWith(productRepository.findById(sttContents.getProductId()))
+					.map(tuple -> tuple.getT1().withProduct(tuple.getT2()))
+			)
+			.flatMap(sttContents ->
+				Mono.just(sttContents).zipWith(userRepository.findById(sttContents.getAgentId()))
+					.map(tuple -> tuple.getT1().withAgent(tuple.getT2()))
+			)
+			.map(sttContents -> {
+				sttContents.setSttText("");
+				return sttContents;
+			});
+	}
+
+	protected Mono<CriterionEvaluationSummary> getCriterionEvaluationSummary(SttEvaluation sttEvaluation ,ScriptCriterion scriptCriterion) {
+		return Flux.fromIterable(scriptCriterion.getScriptDetails())
+			.flatMap(scriptDetail ->
+				// scriptDetail 중 similarity score 가 가장 높은 script 만 stt_script_match 테이블에 기록된다
+				findScriptMatch(sttEvaluation.getSttId(), scriptDetail.getId())
+			)
+//			.switchIfEmpty(
+//				// TODO: stt_script_match 테이블에는 product 의 모든 criterion 의 script detail 중 1개는 객체와 맵핑되어 record 가  있어야 한다.
+//				// 자세한 내용은 CriterionEvaluationSummary 에 기술됨
+//				// 그러므로 이 코드가 실행되어서는 안된다
+//				Flux.just(CriterionEvaluationDetail.builder()
+//					.script("이것은 출력되어서는 안되는 코드입니다.")
+//					.build())
+//			)
+			.collectList()
+			.map(criterionEvaluationDetails -> {
+				if (criterionEvaluationDetails.size() == 0 && scriptCriterion.getScriptDetails().size() > 0) {
+					ScriptDetail scriptDetail = scriptCriterion.getScriptDetails().get(0);
+					return Collections.singletonList(
+						CriterionEvaluationDetail.builder()
+							.scriptDetailId(scriptDetail.getId())
+							.script(scriptDetail.getScript())
+							//											.unitSentence("matched sentences were not found")
+							.criterionName(scriptCriterion.getName())
+							.criterionSort(scriptCriterion.getSort())
+							.baseScore(scriptDetail.getScore())
+							.build()
+					);
+				} else {
+					return criterionEvaluationDetails;
+				}
+			})
+			.map(criterionEvaluationDetails ->
+				CriterionEvaluationSummary.builder()
+					.sttId(sttEvaluation.getSttId())
+					.sttEvaluationId(sttEvaluation.getId())
+					.parentCriterionId(scriptCriterion.getParentId())
+					.criterionId(scriptCriterion.getId())
+					.criterionName(scriptCriterion.getName())
+					.criterionSort(scriptCriterion.getSort())
+					.criterionEvaluationDetails(new ArrayList<>(criterionEvaluationDetails))
+					.build()
+			)
+			.flatMap(criterionEvaluationSummary ->
+				criterionEvaluationRepository.findBySttEvaluationIdAndCriterionId(
+					criterionEvaluationSummary.getSttEvaluationId(),
+					criterionEvaluationSummary.getCriterionId()
+				)
+				.map(criterionEvaluation -> {
+					criterionEvaluationSummary.setCriterionEvaluationId(criterionEvaluation.getId());
+					criterionEvaluationSummary.setScore(criterionEvaluation.getScore());
+					criterionEvaluationSummary.setOpinion(criterionEvaluation.getOpinion());
+					return criterionEvaluationSummary;
+				})
+				.switchIfEmpty(Mono.just(criterionEvaluationSummary)).log()
+			)
+			;
+	}
+
+	/*
+	STT evaluation id 로 TA 엔진이 STT 를 분석 한 결과를 보여주기 위한 메소드
+	 */
 	public Mono<ServerResponse> findSttEvaluationSummaries(ServerRequest request) {
 		String sttEvaluationId = request.pathVariable("sttEvaluationId");
 		if (!NumberUtils.isDigits(sttEvaluationId)) {
@@ -54,100 +132,33 @@ public class EvaluationHandler {
 		}
 		return sttEvaluationRepository.findById(Long.valueOf(sttEvaluationId))
 			.flatMap(sttEvaluation ->
-				Mono.just(sttEvaluation).zipWith(
-					sttContentsRepository.findById(sttEvaluation.getSttId())
-					.flatMap(sttContents ->
-						Mono.just(sttContents).zipWith(productRepository.findById(sttContents.getProductId()))
-						.map(tuple -> tuple.getT1().withProduct(tuple.getT2()))
-					)
-					.flatMap(sttContents ->
-						Mono.just(sttContents).zipWith(userRepository.findById(sttContents.getAgentId()))
-						.map(tuple -> tuple.getT1().withAgent(tuple.getT2()))
-					)
-					.map(sttContents -> {
-						sttContents.setSttText("");
-						return sttContents;
-					})
-				)
+				Mono.just(sttEvaluation).zipWith(getSttContentsBySttId(sttEvaluation.getSttId()))
 				.map(tuple-> tuple.getT1().withStt(tuple.getT2()))
 			)
 			.flatMap(sttEvaluation ->
 				Mono.just(sttEvaluation).zipWith(
-				productRepository.findByModelCode(sttEvaluation.getStt().getSimilarityCode())
-					.flatMapMany(product ->
-						scriptCriteriaRepository.findAllByEnabledIsTrueAndProductId(product.getId())
-						.flatMap(scriptCriterion ->
-							Mono.just(scriptCriterion).zipWith(scriptDetailRepository.findAllByCriterionId(scriptCriterion.getId()).collectList())
-								.map(tuple -> tuple.getT1().withScriptDetails(tuple.getT2()))
+					productRepository.findByModelCode(sttEvaluation.getStt().getSimilarityCode())
+						.flatMapMany(product ->
+							scriptCriteriaRepository.findAllByEnabledIsTrueAndProductId(product.getId())
+							.flatMap(scriptCriterion ->
+								Mono.just(scriptCriterion).zipWith(scriptDetailRepository.findAllByCriterionId(scriptCriterion.getId()).collectList())
+									.map(tuple -> tuple.getT1().withScriptDetails(tuple.getT2()))
+							)
 						)
-					)
-					.flatMap(scriptCriterion ->
-						Flux.fromIterable(scriptCriterion.getScriptDetails())
-							.flatMap(scriptDetail ->
-								// scriptDetail 중 similarity score 가 가장 높은 script 만 stt_script_match 테이블에 기록된다
-								findScriptMatch(sttEvaluation.getSttId(), scriptDetail.getId())
-							)
-//							.switchIfEmpty(
-//								// TODO: stt_script_match 테이블에는 product 의 모든 criterion 의 script detail 중 1개는 객체와 맵핑되어 record 가  있어야 한다.
-//								// 자세한 내용은 CriterionEvaluationSummary 에 기술됨
-//								// 그러므로 이 코드가 실행되어서는 안된다
-//								Flux.just(CriterionEvaluationDetail.builder()
-//									.script("이것은 출력되어서는 안되는 코드입니다.")
-//									.build())
-//							)
-							.collectList()
-							.map(criterionEvaluationDetails -> {
-								if (criterionEvaluationDetails.size() == 0 && scriptCriterion.getScriptDetails().size() > 0) {
-									ScriptDetail scriptDetail = scriptCriterion.getScriptDetails().get(0);
-									return Collections.singletonList(
-										CriterionEvaluationDetail.builder()
-											.scriptDetailId(scriptDetail.getId())
-											.script(scriptDetail.getScript())
-//											.unitSentence("matched sentences were not found")
-											.criterionName(scriptCriterion.getName())
-											.criterionSort(scriptCriterion.getSort())
-											.baseScore(scriptDetail.getScore())
-											.build()
-									);
-								} else {
-									return criterionEvaluationDetails;
-								}
-							})
-							.map(criterionEvaluationDetails ->
-								CriterionEvaluationSummary.builder()
-									.sttId(sttEvaluation.getSttId())
-									.sttEvaluationId(sttEvaluation.getId())
-									.parentCriterionId(scriptCriterion.getParentId())
-									.criterionId(scriptCriterion.getId())
-									.criterionName(scriptCriterion.getName())
-									.criterionSort(scriptCriterion.getSort())
-									.criterionEvaluationDetails(new ArrayList<>(criterionEvaluationDetails))
-									.build()
-							)
-							.flatMap(criterionEvaluationSummary ->
-								criterionEvaluationRepository.findBySttEvaluationIdAndCriterionId(
-									criterionEvaluationSummary.getSttEvaluationId(),
-									criterionEvaluationSummary.getCriterionId()
+						.flatMap(scriptCriterion ->
+							getCriterionEvaluationSummary(sttEvaluation, scriptCriterion)
+
+						)
+						.collectList()
+						.flatMap(summaries ->
+							// tree 구조의 criterion 들을 각각의 root CriterionEvaluationSummary 로 통합 (약 120개의 CriterionEvaluationSummary 가 24개로 통합)
+							Flux.fromIterable(summaries)
+								.filter(summary -> summary.getParentCriterionId() == null)
+								.flatMap(mainSummary ->
+									findCriterionEvaluationDetailsRecursively(mainSummary, Flux.fromIterable(summaries))
 								)
-								.map(criterionEvaluation -> {
-									criterionEvaluationSummary.setCriterionEvaluationId(criterionEvaluation.getId());
-									criterionEvaluationSummary.setScore(criterionEvaluation.getScore());
-									criterionEvaluationSummary.setOpinion(criterionEvaluation.getOpinion());
-									return criterionEvaluationSummary;
-								})
-								.switchIfEmpty(Mono.just(criterionEvaluationSummary)).log()
-							)
-					)
-					.collectList()
-					.flatMap(list ->
-						// tree 구조의 criterion 들을 각각의 root CriterionEvaluationSummary 로 통합
-						Flux.fromIterable(list)
-							.filter(summary -> summary.getParentCriterionId() == null)
-							.flatMap(mainSummary ->
-								this.findCriterionEvaluationDetailsRecursively(mainSummary, Flux.fromIterable(list))
-							)
-							.collectList()
-					)
+								.collectList()
+						)
 				)
 				.map(tuple->tuple.getT1().withCriterionEvaluationSummaries(tuple.getT2()))
 			)
