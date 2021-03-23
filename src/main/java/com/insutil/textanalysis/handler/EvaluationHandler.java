@@ -174,88 +174,6 @@ public class EvaluationHandler {
 		;
 	}
 
-//	public Mono<ServerResponse> findSttEvaluationDetails(ServerRequest request) {
-//		String sttEvaluationId = request.pathVariable("sttEvaluationId");
-//		if (!NumberUtils.isDigits(sttEvaluationId)) {
-//			return ServerResponse.badRequest().bodyValue(sttEvaluationId);
-//		}
-//		return getEvaluationDetailRows(Long.valueOf(sttEvaluationId))
-//			.collectList()
-//			.map(this::zipEvaluationDetails)
-//			.flatMap(ServerResponse.ok()::bodyValue);
-//	}
-
-//	public List<EvaluationDetailRow> zipEvaluationDetails(List<EvaluationDetailRow> rows) {
-//		return rows.stream().peek(evaluationDetailRow -> evaluationDetailRow.setRootScriptCriterion(findRootCriterion(evaluationDetailRow, rows))).collect(Collectors.toList());
-//	}
-
-	protected ScriptCriterion findRootCriterion(EvaluationDetailRow item, List<EvaluationDetailRow> list) {
-		Optional<EvaluationDetailRow> parent = list.stream().filter(target -> target.getCriterionId().equals(item.getScriptCriterion().getParentId()))
-			.findFirst();
-		if (parent.isEmpty()) {
-			return item.getScriptCriterion();
-		} else {
-			return findRootCriterion(parent.get(), list);
-		}
-	}
-
-//	public Flux<EvaluationDetailRow> getEvaluationDetailRows(Long sttEvaluationId) {
-//		return sttEvaluationRepository.findById(sttEvaluationId)
-//			.flatMap(sttEvaluation ->
-//				Mono.just(sttEvaluation).zipWith(sttContentsRepository.findById(sttEvaluation.getSttId()))
-//					.map(tuple-> tuple.getT1().withStt(tuple.getT2()))
-//			)
-//			.flatMapMany(sttEvaluation ->
-//				productRepository.findByModelCode(sttEvaluation.getStt().getSimilarityCode())
-//					.flatMapMany(product ->
-//						scriptCriteriaRepository.findAllByEnabledIsTrueAndProductId(product.getId())
-//					)
-//					.flatMap(scriptCriterion ->
-//						Mono.just(scriptCriterion).zipWith(scriptDetailRepository.findAllByCriterionId(scriptCriterion.getId()).collectList())
-//						.map(tuple -> tuple.getT1().withScriptDetails(tuple.getT2()))
-//					)
-//					.flatMap(scriptCriterion -> {
-//						if (scriptCriterion.getScriptDetails().size() == 0) {
-//							return Flux.just(EvaluationDetailRow.builder()
-//								.criterionId(scriptCriterion.getId())
-//								.scriptCriterion(scriptCriterion)
-//								.build()
-//							);
-//						} else {
-//							return Flux.fromIterable(scriptCriterion.getScriptDetails())
-//								.map(scriptDetail ->
-//									EvaluationDetailRow.builder()
-//										.criterionId(scriptCriterion.getId())
-//										.scriptCriterion(scriptCriterion)
-//										.scriptDetailId(scriptDetail.getId())
-//										.scriptDetail(scriptDetail)
-//										.build()
-//								);
-//						}
-//					}
-//					)
-//					.flatMap(evaluationRow ->
-//						criterionEvaluationRepository.findBySttEvaluationIdAndCriterionId(sttEvaluation.getId(), evaluationRow.getCriterionId())
-//							.flatMap(criterionEvaluation ->
-//								scriptMatchRepository.findByCriterionEvaluationIdAndScriptDetailId(criterionEvaluation.getId(), evaluationRow.getScriptDetailId())
-//								.flatMap(scriptMatch ->
-//									Mono.just(scriptMatch).zipWith(sttSentencesRepository.findById(scriptMatch.getSttSentenceId()))
-//									.map(tuple -> tuple.getT1().withSttSentence(tuple.getT2()))
-//								)
-//							)
-//							.map(scriptMatch -> {
-//								evaluationRow.setSttSentenceId(scriptMatch.getSttSentence().getId());
-//								evaluationRow.setUnitSentence(scriptMatch.getSttSentence().getUnitSentence());
-//								evaluationRow.setMappedScript(scriptMatch.getMappedScript());
-//								evaluationRow.setSimilarityScore(scriptMatch.getSimilarityScore());
-//								return evaluationRow;
-//							})
-//							.switchIfEmpty(Mono.just(evaluationRow))
-//					)
-//			)
-//			;
-//	}
-
 	public Mono<ServerResponse> findCallEvaluationsByDate(ServerRequest request) {
 		return sttEvaluationRepository.findAllByCallDate(request.pathVariable("callDate"))
 			.flatMap(this::getSttEvaluationWiths)
@@ -344,22 +262,10 @@ public class EvaluationHandler {
 						return criterionEvaluationRepository.findById(criterionEvaluation.getId())
 							.map(origin -> origin.update(criterionEvaluation))
 							.flatMap(criterionEvaluationRepository::save);
-//							.zipWith(updateScriptMatches(criterionEvaluation.getScriptMatches()).collectList())
-//							.map(tuple -> tuple.getT1().withScriptMatches(tuple.getT2())); // ScriptMatch 정보는 front-end 에서 변경하지 않는다
 					} else {
 						return criterionEvaluationRepository.save(criterionEvaluation);
 					}
 				}
 			);
 	}
-
-	protected Flux<ScriptMatch> updateScriptMatches(List<ScriptMatch> scriptMatches) {
-		return Flux.fromIterable(scriptMatches)
-			.flatMap(scriptMatch ->
-				scriptMatchRepository.findById(scriptMatch.getId())
-					.map(origin -> origin.update(scriptMatch))
-					.flatMap(scriptMatchRepository::save)
-			);
-	}
-
 }
