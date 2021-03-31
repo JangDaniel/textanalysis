@@ -19,7 +19,7 @@ import java.util.List;
 public class Product {
 	@Id
 	private Long id;
-	private Long insuranceType;
+	private Long category;
 	private String code;
 	private String name;
 	private String modelCode;
