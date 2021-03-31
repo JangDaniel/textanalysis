@@ -4,7 +4,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,7 +20,7 @@ public class SttSentences extends BaseModel {
 
     private Long sttId;
     private String contractNo;
-    private String callDate;
+    private LocalDate callDate;
     private String unitSentence;
     private String morpheme;
 }

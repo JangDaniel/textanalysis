@@ -6,6 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @NoArgsConstructor
@@ -20,7 +21,7 @@ public class STTContents extends BaseModel {
 	private Long id;
 	private String uniquekey;
 	private String contractNo;
-	private String callDate;
+	private LocalDate callDate;
 	private LocalDateTime recordEndTime;
 	private Long agentId;
 	private String customerId;
