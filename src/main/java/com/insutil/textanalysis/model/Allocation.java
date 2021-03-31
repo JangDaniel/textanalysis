@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Allocation {
 	@Id
 	private Long id;
