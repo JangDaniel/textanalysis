@@ -4,6 +4,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Table;
+import reactor.core.publisher.Flux;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +24,11 @@ public class ScriptDetail {
 
 	private Integer sort;
 	private String script;
+
+	// 변경 할 객체 정보가 있으면 변경된 대로, 객체가 없으면 script 원문 그대로 복사
+	@Transient
+	private String postObjectProcessingScript;
+
 	private String morpheme;
 	private Integer score;
 	private Long registUser;
@@ -31,9 +37,19 @@ public class ScriptDetail {
 	private LocalDateTime updateDate;
 	private Boolean enabled;
 
+
+	@Transient
+	private String objectReplacedScript;
+
 	@Transient
 	@With
 	private List<ScriptDetailMainWord> mainWords;
+
+	@Transient
+	@With
+	private Flux<ScriptDetailMainWord> mainWordsFlux;
+
+
 
 	public ScriptDetail update(ScriptDetail scriptDetail) {
 		if (scriptDetail.criterionId != null) this.criterionId = scriptDetail.criterionId;

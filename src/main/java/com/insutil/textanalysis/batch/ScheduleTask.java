@@ -56,10 +56,11 @@ public class ScheduleTask {
                 .parallel()
                 .runOn(Schedulers.parallel())
                 .doOnNext(this::onGoingMorphemeAnalysis)    // 상태 전환
-                .map(morphemeAnalysis::analysisMorpheme) // 문장 분리 및 형태소 분석
+                .map(morphemeAnalysis::extractSentenceAndAnalysisMorpheme) // 문장 분리 및 형태소 분석
                 .sequential()
                 .publishOn(Schedulers.single())
-                .subscribe(morphemeAnalysis::saveSentenceData); // t_ta_stt_sentences 형태소 분석 결과 입력
+                .flatMap(morphemeAnalysis::saveSentenceData)
+                .subscribe(); // t_ta_stt_sentences 형태소 분석 결과 입력
 
         log.info("complete...");
 
