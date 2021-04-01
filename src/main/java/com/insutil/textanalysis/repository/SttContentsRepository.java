@@ -22,4 +22,7 @@ public interface SttContentsRepository extends R2dbcRepository<STTContents, Long
     Mono<Integer> updateStateCode(long stateCode, long id);
 
 
+    @Query("select distinct similarity_code from t_ta_stt_contents where contract_no = :contractNo")
+    Mono<String> findSimilarityCode(String contractNo);
+
 }

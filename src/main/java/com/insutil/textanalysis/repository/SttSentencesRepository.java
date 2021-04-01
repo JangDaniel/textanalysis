@@ -5,6 +5,7 @@ import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -12,4 +13,7 @@ public interface SttSentencesRepository extends R2dbcRepository<SttSentences, Lo
     @Modifying
     @Query("delete from t_ta_stt_sentences where call_date = :callDate")
     Mono<Integer> deleteSttSentencesByCallDate(String callDate);
+
+    @Query("select * from t_ta_stt_sentences where call_date = :callDate and contract_no = :contractNo")
+    Flux<SttSentences> findSttSentencesByCallDateAndContractNo(String callDate, String contractNo);
 }
