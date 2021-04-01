@@ -14,8 +14,8 @@ public class EvaluationAllocationRouter {
 		return RouterFunctions.route()
 			.GET("/api/evaluation/allocation/user", handler::findAllEvaluators)
 			.GET("/api/evaluation/allocation/{date}", handler::findByDate)
-			.POST("/api/evaluation/allocation", handler::save)
-			.PUT("/api/evaluation/allocation/{id}", handler::update)
+			.POST("/api/evaluation/allocation", handler::saveAll)
+			.PUT("/api/evaluation/allocation/{evaluatorId}", handler::updateAll)
 			.build();
 	}
 }

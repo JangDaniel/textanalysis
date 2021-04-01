@@ -25,9 +25,8 @@ public class Allocation {
 	private Long id;
 	private LocalDate date;
 	private Long evaluatorId;
-	private Integer motorCount;
-	private Integer longtermCount;
-	private Integer commonCount;
+	private Long insuranceType;
+	private Integer count;
 	private Long registUser;
 	private Long updateUser;
 	private LocalDateTime registDate;
@@ -38,12 +37,15 @@ public class Allocation {
 	@With
 	private User evaluator;
 
+	@Transient
+	@With
+	private Code insuranceTypeCode;
+
 	public Allocation update(Allocation target) {
 		if (target.date != null) this.date = target.date;
 		if (target.evaluatorId != null) this.evaluatorId = target.evaluatorId;
-		if (target.motorCount != null) this.motorCount = target.motorCount;
-		if (target.longtermCount != null) this.longtermCount = target.longtermCount;
-		if (target.commonCount != null) this.commonCount = target.commonCount;
+		if (target.insuranceType != null) this.insuranceType = target.insuranceType;
+		if (target.count != null) this.count = target.count;
 		if (target.updateUser != null) this.updateUser = target.updateUser;
 		if (target.enabled != null) this.enabled = target.enabled;
 		return this;
