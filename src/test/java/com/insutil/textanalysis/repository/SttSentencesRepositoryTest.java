@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import reactor.test.StepVerifier;
 
+import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -18,7 +20,7 @@ class SttSentencesRepositoryTest {
     public void insertTest() {
         SttSentences sttSentences = SttSentences.builder()
                 .sttId(1L)
-                .callDate("20210308")
+                .callDate(LocalDate.now())
                 .unitSentence("고객님 아까 말씀 드린 것처럼 제가 주소지 는 변경 해 드렸구요 고객님")
                 .morpheme("[고객,말씀,제가,주소지,변경,고객]")
                 .build();
