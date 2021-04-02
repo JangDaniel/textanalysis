@@ -5,7 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Builder
+@ToString
 public class User {
 	@Id
 	private Long id;
@@ -26,5 +27,5 @@ public class User {
 
 	@Transient
 	@With
-	private Allocation allocation;
+	private List<Allocation> allocations;
 }

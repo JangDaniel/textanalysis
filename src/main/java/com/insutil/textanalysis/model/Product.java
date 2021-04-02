@@ -29,4 +29,8 @@ public class Product {
 	@Transient
 	@With
 	private List<ScriptCriterion> scriptCriteria;
+
+	@Transient
+	@With
+	private Category productCategory;
 }

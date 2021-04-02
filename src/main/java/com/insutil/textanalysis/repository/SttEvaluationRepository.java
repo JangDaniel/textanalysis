@@ -1,5 +1,6 @@
 package com.insutil.textanalysis.repository;
 
+import com.insutil.textanalysis.model.AllocatedCount;
 import com.insutil.textanalysis.model.SttEvaluation;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
@@ -25,4 +26,31 @@ public interface SttEvaluationRepository extends R2dbcRepository<SttEvaluation, 
 	Flux<SttEvaluation> findAllByCallDateAndAgentId(LocalDate callDate, Long agentId);
 
 	Mono<SttEvaluation> findBySttId(Long sttId);
+
+	/**
+	 * 평가사에게 date 에 할당 된 보종이 insuranceType 인 stt 갯수
+	 * @param date
+	 * @param insuranceType
+	 * @return
+	 */
+	@Query(
+		"select se.evaluator_id, se.insurance_type, count(*) as count " +
+		"from t_ta_stt_evaluation se " +
+		"left join t_ta_stt_contents sc on sc.id = se.stt_id " +
+		"where sc.call_date = :date " +
+		"and se.insurance_type = :insuranceType " +
+		"and se.evaluator_id is not null" +
+		"group by evaluator_id"
+	)
+	Flux<AllocatedCount> findAllAllocatedCount(LocalDate date, Long insuranceType);
+
+	@Query(
+		"select se.evaluator_id, se.insurance_type, count(*) as count " +
+		"from t_ta_stt_evaluation se " +
+		"left join t_ta_stt_contents sc on sc.id = se.stt_id " +
+		"where sc.call_date = :date " +
+		"and se.evaluator_id = :evaluatorId " +
+		"and se.insurance_type = :insuranceType"
+	)
+	Mono<AllocatedCount> findAllocatedCountByEvaluatorId(LocalDate date, Long evaluatorId, Long insuranceType);
 }

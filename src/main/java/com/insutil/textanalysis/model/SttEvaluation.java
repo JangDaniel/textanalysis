@@ -20,6 +20,7 @@ public class SttEvaluation {
 	@Id
 	private Long id;
 	private Long sttId;
+	private Long insuranceType;
 
 	private Long stateId;
 	private Long resultId;
@@ -53,6 +54,7 @@ public class SttEvaluation {
 
 	public SttEvaluation update(SttEvaluation target) {
 		if (target.sttId != null) this.sttId = target.sttId;
+		if (target.insuranceType != null) this.insuranceType = target.insuranceType;
 		if (target.stateId != null) this.stateId = target.stateId;
 		if (target.resultId != null) this.resultId = target.resultId;
 		if (target.evaluatorId != null) this.evaluatorId = target.evaluatorId;
