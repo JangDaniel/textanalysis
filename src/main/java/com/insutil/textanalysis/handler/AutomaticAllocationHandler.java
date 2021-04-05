@@ -10,6 +10,7 @@ import reactor.core.publisher.GroupedFlux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -89,9 +90,9 @@ public class AutomaticAllocationHandler {
 				return tuple.getT1();
 			})
 			.filter(allocationCount -> allocationCount.getCount() > 0)
-			.collectList().log("filtered allocationCounts")
+			.collectList()
 			.map(allocationCounts ->
-				allocationCounts.stream().max((o1, o2) -> o1.getCount() - o2.getCount())
+				allocationCounts.stream().max(Comparator.comparingInt(AllocationCount::getCount))
 			)
 			.map(Optional::get).log();
 	}

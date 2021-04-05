@@ -43,10 +43,16 @@ public class SttEvaluation {
 	@Transient
 	@With
 	private List<CriterionEvaluation> criterionEvaluations; // for save or update
+	@Transient
+	@With
+	private Integer score;
 
 	@Transient
 	@With
 	private List<ScriptMatch> scriptMatches;
+	@Transient
+	@With
+	private Float matchRate;
 
 	@Transient
 	@With

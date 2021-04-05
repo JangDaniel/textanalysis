@@ -192,19 +192,73 @@ public class EvaluationHandler {
 			.flatMap(ServerResponse.ok()::bodyValue);
 	}
 
+	/**
+	 * TODO : 35개의 stt 들의 크기가 1.6M 이고 시간은 4초가 걸린다.
+	 * TODO : matchRate 와 score 를 계산하기 위해서 모든 criteria 와 scriptDetail 을 전부 client 로 전송해서 생기는 문제
+	 * TODO : matchRate 와 score 계산을 해서 client 로 보낸다.
+	 * TODO : scriptMatches 도 계산을 위해서 필요한 정보이다.
+	 * const scriptMatches = item.scriptMatches;
+	 * let matchRate = 0;
+	 * if (scriptMatches.length > 0) {
+	 *     const rateSum = scriptMatches
+	 *         .map((scriptMatch) => scriptMatch.matchRate)
+	 *         .reduce((acc, cur) => {
+	 *             if (cur === null) return acc + 0;
+	 *             return acc + cur;
+	 *         });
+	 *     matchRate = rateSum / scriptMatches.length;
+	 * }
+	 * let score = 0;
+	 * if (item.criterionEvaluations.length > 0) {
+	 *     score = item.criterionEvaluations
+	 *         .map((criterionEvaluation) => criterionEvaluation.score)
+	 *         .reduce((acc, cur) => {
+	 *             if (cur === null) return acc + 0;
+	 *             return acc + cur;
+	 *         });
+	 * }
+	 */
 	protected Mono<SttEvaluation> getSttEvaluationWiths(SttEvaluation _sttEvaluation) {
 		return Mono.just(_sttEvaluation)
 			.flatMap(sttEvaluation ->
 				Mono.just(sttEvaluation).zipWith(userRepository.findById(sttEvaluation.getEvaluatorId()))
-					.map(tuple -> tuple.getT1().withEvaluator(tuple.getT2()))
+				.map(tuple -> tuple.getT1().withEvaluator(tuple.getT2()))
 			)
+			.onErrorResume(throwable -> Mono.just(_sttEvaluation))
+//			.flatMap(sttEvaluation ->
+//				Mono.just(sttEvaluation).zipWith(getCriterionEvaluations(sttEvaluation.getId()).collectList())
+//					.map(tuple -> tuple.getT1().withCriterionEvaluations(tuple.getT2()))
+//			)
 			.flatMap(sttEvaluation ->
-				Mono.just(sttEvaluation).zipWith(getCriterionEvaluations(sttEvaluation.getId()).collectList())
-					.map(tuple -> tuple.getT1().withCriterionEvaluations(tuple.getT2()))
+				Mono.just(sttEvaluation).zipWith(
+					getCriterionEvaluations(sttEvaluation.getId())
+						.reduce(0, (acc, criterionEvaluation) -> acc + criterionEvaluation.getScore())
+				)
+				.map(tuple -> tuple.getT1().withScore(tuple.getT2()))
 			)
+//			.flatMap(sttEvaluation ->
+//				Mono.just(sttEvaluation).zipWith(scriptMatchRepository.findBySttId(sttEvaluation.getSttId()).collectList())
+//					.map(tuple -> tuple.getT1().withScriptMatches(tuple.getT2()))
+//			)
 			.flatMap(sttEvaluation ->
-				Mono.just(sttEvaluation).zipWith(scriptMatchRepository.findBySttId(sttEvaluation.getSttId()).collectList())
-					.map(tuple -> tuple.getT1().withScriptMatches(tuple.getT2()))
+				Mono.just(sttEvaluation).zipWith(
+					scriptMatchRepository.findBySttId(sttEvaluation.getSttId())
+					.map(scriptMatch ->
+						AccModel.builder().value(scriptMatch.getSimilarityScore()).count(1).build()
+					)
+					.reduce(AccModel.builder().value(0).count(0).build() , (acc, cur) -> {
+						acc.addValue(cur.getValue());
+						acc.addCount();
+						return acc;
+					})
+					.map(accModel -> {
+						if (accModel.getValue() > 0.0f && accModel.getCount() > 0) {
+							accModel.setValue(accModel.getValue() / accModel.getCount());
+						}
+						return accModel;
+					})
+				)
+				.map(tuple -> tuple.getT1().withMatchRate(tuple.getT2().getValue()))
 			)
 			.zipWith(sttContentsRepository.findById(_sttEvaluation.getSttId())
 				.flatMap(sttContents ->
@@ -220,7 +274,8 @@ public class EvaluationHandler {
 					return sttContents;
 				})
 			)
-			.map(tuple -> tuple.getT1().withStt(tuple.getT2()));
+			.map(tuple -> tuple.getT1().withStt(tuple.getT2()))
+			;
 	}
 
 	protected Flux<CriterionEvaluation> getCriterionEvaluations(Long sttEvaluationId) {
@@ -236,8 +291,9 @@ public class EvaluationHandler {
 
 	protected Mono<Product> getProduct(Long productId) {
 		return productRepository.findById(productId)
-			.zipWith(getScriptCriteria(productId).collectList())
-			.map(tuple -> tuple.getT1().withScriptCriteria(tuple.getT2()));
+//			.zipWith(getScriptCriteria(productId).collectList())
+//			.map(tuple -> tuple.getT1().withScriptCriteria(tuple.getT2()))
+			;
 	}
 
 	protected Flux<ScriptCriterion> getScriptCriteria(Long productId) {
