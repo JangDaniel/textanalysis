@@ -39,31 +39,45 @@ public class AutomaticAllocationHandler {
 
 	public Mono<SttEvaluation> evaluate(Long sttId) {
 		// 1. stt의 보종 찾기
-		// 2. 평가사와 평사사 별 allocation 조회
-		// 3. 해당 보종에 대해서 할당량이 남은 평가사 중에서 가장 할당된 갯수가 적은(자동 배분 설정된 count 와 배분된 count 의 차이가 큰) 평가사 찾기
-		// 4. 찾은 평가사에게 할당(stt_evaluation 테이블에 기록)
-		// 5. 만약 2번 단계에서 평가사를 찾지 못하면 미할당 상태로 저장
-
+		// 2. STT 가 holiday 에 생성되면 평가사에게 분배하지 않는다.
+		// 3. 평가사와 평사사 별 allocation 조회
+		// 4. 해당 보종에 대해서 할당량이 남은 평가사 중에서 가장 할당된 갯수가 적은(자동 배분 설정된 count 와 배분된 count 의 차이가 큰) 평가사 찾기
+		// 5. 찾은 평가사에게 할당(stt_evaluation 테이블에 기록)
+		// 6. 만약 3번 단계에서 평가사를 찾지 못하면 미할당 상태로 저장
 		return getSttContents(sttId)
 			.flatMap(sttContents ->
-				findEvaluatorToAllocate(sttContents.getCallDate(), sttContents.getProduct().getProductCategory().getInsuranceType())
-				.flatMap(allocationCount ->
-					sttEvaluationRepository.save(
-						SttEvaluation.builder()
-							.sttId(sttId)
-							.insuranceType(allocationCount.getInsuranceType())
-							.evaluatorId(allocationCount.getEvaluatorId())
-						.build()
+				holidayRepository.isHolyday(sttContents.getCallDate())
+					.flatMap(aBoolean ->
+						// holiday 인 경우 evaluator 없이 저장
+						sttEvaluationRepository.save(
+							SttEvaluation.builder()
+								.sttId(sttId)
+								.insuranceType(sttContents.getProduct().getProductCategory().getInsuranceType())
+								.build()
+						)
 					)
-				)
-				.onErrorResume(throwable ->
-					sttEvaluationRepository.save(
-						SttEvaluation.builder()
-							.sttId(sttId)
-							.insuranceType(sttContents.getProduct().getProductCategory().getInsuranceType())
-							.build()
+					.switchIfEmpty(
+						// holiday 가 아닌 경우 evaluator 를 찾아서 저장
+						findEvaluatorToAllocate(sttContents.getCallDate(), sttContents.getProduct().getProductCategory().getInsuranceType())
+						.flatMap(allocationCount ->
+							sttEvaluationRepository.save(
+								SttEvaluation.builder()
+									.sttId(sttId)
+									.insuranceType(allocationCount.getInsuranceType())
+									.evaluatorId(allocationCount.getEvaluatorId())
+								.build()
+							)
+						)
 					)
-				)
+					.onErrorResume(throwable ->
+						// evaluator 를 찾지 못해서 findEvaluatorToAllocate 의 return 값(optional.get) 에서 error 를 throw 한 경우 evaluator 없이 저장
+						sttEvaluationRepository.save(
+							SttEvaluation.builder()
+								.sttId(sttId)
+								.insuranceType(sttContents.getProduct().getProductCategory().getInsuranceType())
+								.build()
+						)
+					)
 			);
 	}
 
@@ -94,7 +108,7 @@ public class AutomaticAllocationHandler {
 			.map(allocationCounts ->
 				allocationCounts.stream().max(Comparator.comparingInt(AllocationCount::getCount))
 			)
-			.map(Optional::get).log();
+			.map(Optional::get);
 	}
 
 	/**
@@ -132,8 +146,9 @@ public class AutomaticAllocationHandler {
 	 */
 	protected Flux<User> getEvaluators(LocalDate date) {
 		// date 는 stt 상담 날짜 이지만 allocation 은 date 가 포함된 월의 allocation 을 구하기 때문에 date 의 day 는 1일 이어야 한다.
-		return userRepository.findAllByEnabledIsTrueAndEvaluatorIsTrue()
-			.flatMap(user->
+		// allocateBreak 날짜에 해당하는 evaluator 는 제외한다.
+		return userRepository.findAllByNoBreakDayEvaluators(date)
+			.flatMap(user ->
 				Mono.just(user).zipWith(getAllocations(user.getId(), date.withDayOfMonth(1)).collectList())
 				.map(tuple -> tuple.getT1().withAllocations(tuple.getT2()))
 			);

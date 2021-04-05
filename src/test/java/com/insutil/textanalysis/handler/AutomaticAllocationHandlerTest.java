@@ -14,11 +14,12 @@ public class AutomaticAllocationHandlerTest {
 
 	@Test
 	void evaluate() {
-		Mono.just(1226L)
+		// 1341, 319, 863
+		Mono.just(863L)
 			.flatMap(handler::evaluate)
 			.doOnNext(System.out::println)
 			.as(StepVerifier::create)
-			.expectNextCount(4)
+			.expectNextCount(1)
 			.verifyComplete();
 	}
 
