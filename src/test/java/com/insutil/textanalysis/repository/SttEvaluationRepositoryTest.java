@@ -20,4 +20,25 @@ public class SttEvaluationRepositoryTest {
 			.expectNextCount(3)
 			.verifyComplete();
 	}
+
+	@Test
+	void findAllByLimit() {
+		repository.findAll()
+			.doOnNext(sttEvaluation -> System.out.print(sttEvaluation.getId() + " "))
+			.as(StepVerifier::create)
+			.thenConsumeWhile(sttEvaluation -> sttEvaluation.getId() != null)
+			.verifyComplete();
+
+		repository.findAllByLimit(0, 10)
+			.doOnNext(sttEvaluation -> System.out.print(sttEvaluation.getId() + " "))
+			.as(StepVerifier::create)
+			.thenConsumeWhile(sttEvaluation -> sttEvaluation.getId() != null)
+			.verifyComplete();
+
+		repository.findAllByLimit(10, 10)
+			.doOnNext(sttEvaluation -> System.out.print(sttEvaluation.getId() + " "))
+			.as(StepVerifier::create)
+			.thenConsumeWhile(sttEvaluation -> sttEvaluation.getId() != null)
+			.verifyComplete();
+	}
 }

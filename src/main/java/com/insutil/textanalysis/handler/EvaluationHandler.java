@@ -30,10 +30,23 @@ public class EvaluationHandler {
 	private final UserRepository userRepository;
 
 	public Mono<ServerResponse> findAll(ServerRequest request) {
-		return sttEvaluationRepository.findAll()
+		return sttEvaluationRepository.findAllByEnabledIsTrueOrderByIdDesc()
 			.flatMap(this::getSttEvaluationWiths)
 			.collectList()
 			.flatMap(ServerResponse.ok()::bodyValue);
+	}
+
+	public Mono<ServerResponse> findAllByLimit(ServerRequest request) {
+		String offset = request.pathVariable("offset");
+		String limit = request.pathVariable("limit");
+		return sttEvaluationRepository.findAllByLimit(Integer.parseInt(offset), Integer.parseInt(limit))
+			.flatMap(this::getSttEvaluationWiths)
+			.collectList()
+			.flatMap(ServerResponse.ok()::bodyValue);
+	}
+
+	public Mono<ServerResponse> getTotalCount(ServerRequest reqeust) {
+		return sttEvaluationRepository.getTotalCount().flatMap(ServerResponse.ok()::bodyValue);
 	}
 
 	public Mono<ServerResponse> findSttEvaluationById(ServerRequest request) {

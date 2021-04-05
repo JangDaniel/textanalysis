@@ -10,6 +10,14 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDate;
 
 public interface SttEvaluationRepository extends R2dbcRepository<SttEvaluation, Long> {
+	@Query("select count(*) from t_ta_stt_evaluation where enabled is true")
+	Mono<Integer> getTotalCount();
+
+	@Query("select * from t_ta_stt_evaluation where enabled is true  order by id desc limit :offset, :limit")
+	Flux<SttEvaluation> findAllByLimit(int offset, int limit);
+
+	Flux<SttEvaluation> findAllByEnabledIsTrueOrderByIdDesc();
+
 	@Query(
 		"select e.* from t_ta_stt_evaluation e " +
 		"left join t_ta_stt_contents s on s.id = e.stt_id " +
