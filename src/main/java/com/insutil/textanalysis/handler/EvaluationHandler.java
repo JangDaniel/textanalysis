@@ -1,6 +1,7 @@
 package com.insutil.textanalysis.handler;
 
 import com.insutil.textanalysis.model.*;
+import com.insutil.textanalysis.model.dto.EvaluationSearchParam;
 import com.insutil.textanalysis.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,8 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,18 +38,36 @@ public class EvaluationHandler {
 			.collectList()
 			.flatMap(ServerResponse.ok()::bodyValue);
 	}
+	public Mono<ServerResponse> findAllByQuery(ServerRequest request) {
+		String now = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
+		String fromDate = request.queryParam("fromDate").orElse(now);
+		String toDate = request.queryParam("toDate").orElse(now);
+		String offset = request.queryParam("offset").orElse("0");
+		String limit = request.queryParam("limit").orElse("10");
+		String evaluator = request.queryParam("evaluator").orElse("all");
 
-	public Mono<ServerResponse> findAllByLimit(ServerRequest request) {
-		String offset = request.pathVariable("offset");
-		String limit = request.pathVariable("limit");
-		return sttEvaluationRepository.findAllByLimit(Integer.parseInt(offset), Integer.parseInt(limit))
+		if (evaluator.equals("all")) {
+			return sttEvaluationRepository.findAllByParam(LocalDate.parse(fromDate), LocalDate.parse(toDate), Integer.parseInt(offset), Integer.parseInt(limit))
+				.flatMap(this::getSttEvaluationWiths)
+				.collectList()
+				.flatMap(ServerResponse.ok()::bodyValue);
+		}
+		return sttEvaluationRepository.findAllByParam(LocalDate.parse(fromDate), LocalDate.parse(toDate), Integer.parseInt(offset), Integer.parseInt(limit), Long.parseLong(evaluator))
 			.flatMap(this::getSttEvaluationWiths)
 			.collectList()
 			.flatMap(ServerResponse.ok()::bodyValue);
 	}
 
-	public Mono<ServerResponse> getTotalCount(ServerRequest reqeust) {
-		return sttEvaluationRepository.getTotalCount().flatMap(ServerResponse.ok()::bodyValue);
+	public Mono<ServerResponse> getTotalCountByQuery(ServerRequest request) {
+		String now = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
+		String fromDate = request.queryParam("fromDate").orElse(now);
+		String toDate = request.queryParam("toDate").orElse(now);
+		String evaluator = request.queryParam("evaluator").orElse("all");
+		if (evaluator.equals("all")) {
+			return sttEvaluationRepository.getTotalCount(LocalDate.parse(fromDate), LocalDate.parse(toDate)).flatMap(ServerResponse.ok()::bodyValue);
+		}
+		return sttEvaluationRepository.getTotalCount(LocalDate.parse(fromDate), LocalDate.parse(toDate), Long.parseLong(evaluator)).flatMap(ServerResponse.ok()::bodyValue);
+
 	}
 
 	public Mono<ServerResponse> findSttEvaluationById(ServerRequest request) {

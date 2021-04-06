@@ -10,11 +10,44 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDate;
 
 public interface SttEvaluationRepository extends R2dbcRepository<SttEvaluation, Long> {
-	@Query("select count(*) from t_ta_stt_evaluation where enabled is true")
-	Mono<Integer> getTotalCount();
+	@Query("select count(*) " +
+		"from t_ta_stt_evaluation e " +
+		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+		"where e.enabled is true " +
+		"and s.call_date between :fromDate and :toDate " +
+		"order by e.id desc ")
+	Mono<Integer> getTotalCount(LocalDate fromDate, LocalDate toDate);
 
-	@Query("select * from t_ta_stt_evaluation where enabled is true  order by id desc limit :offset, :limit")
+	@Query("select count(*) " +
+		"from t_ta_stt_evaluation e " +
+		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+		"where e.enabled is true " +
+		"and s.call_date between :fromDate and :toDate " +
+		"and e.evaluator_id = :evaluatorId " +
+		"order by e.id desc ")
+	Mono<Integer> getTotalCount(LocalDate fromDate, LocalDate toDate, Long evaluatorId);
+
+	@Query("select * from t_ta_stt_evaluation where enabled is true order by id desc limit :offset, :limit")
 	Flux<SttEvaluation> findAllByLimit(int offset, int limit);
+
+	@Query("select e.* " +
+		"from t_ta_stt_evaluation e " +
+		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+		"where e.enabled is true " +
+		"and s.call_date between :fromDate and :toDate " +
+		"order by e.id desc " +
+		"limit :offset, :limit")
+	Flux<SttEvaluation> findAllByParam(LocalDate fromDate, LocalDate toDate, int offset, int limit);
+
+	@Query("select e.* " +
+		"from t_ta_stt_evaluation e " +
+		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+		"where e.enabled is true " +
+		"and s.call_date between :fromDate and :toDate " +
+		"and e.evaluator_id = :evaluatorId " +
+		"order by id desc " +
+		"limit :offset, :limit")
+	Flux<SttEvaluation> findAllByParam(LocalDate fromDate, LocalDate toDate, int offset, int limit, Long evaluatorId);
 
 	Flux<SttEvaluation> findAllByEnabledIsTrueOrderByIdDesc();
 

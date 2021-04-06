@@ -13,8 +13,8 @@ public class EvaluationRouter {
 	public RouterFunction<ServerResponse> evaluationRoute(EvaluationHandler handler) {
 		return RouterFunctions.route()
 			.GET("/api/evaluation", handler::findAll)
-			.GET("/api/evaluation/limit/{offset}/{limit}", handler::findAllByLimit)
-			.GET("/api/evaluation/count", handler::getTotalCount)
+			.GET("/api/evaluation/query", handler::findAllByQuery)
+			.GET("/api/evaluation/count", handler::getTotalCountByQuery)
 			.GET("/api/evaluation/{id}", handler::findSttEvaluationById)
 //			.GET("/api/evaluation/date/{callDate}", handler::findCallEvaluationsByDate)
 //			.POST("/api/evaluation", handler::saveCallEvaluation)// CallEvaluation 정보는 front-end에서 생성하지 않는다
