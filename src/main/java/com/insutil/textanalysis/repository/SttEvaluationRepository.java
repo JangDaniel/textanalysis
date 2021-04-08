@@ -35,9 +35,17 @@ public interface SttEvaluationRepository extends R2dbcRepository<SttEvaluation, 
 		"left join t_ta_stt_contents s on s.id = e.stt_id " +
 		"where e.enabled is true " +
 		"and s.call_date between :fromDate and :toDate " +
+		"order by e.id desc")
+	Flux<SttEvaluation> findAllByQuery(LocalDate fromDate, LocalDate toDate);
+
+	@Query("select e.* " +
+		"from t_ta_stt_evaluation e " +
+		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+		"where e.enabled is true " +
+		"and s.call_date between :fromDate and :toDate " +
 		"order by e.id desc " +
 		"limit :offset, :limit")
-	Flux<SttEvaluation> findAllByParam(LocalDate fromDate, LocalDate toDate, int offset, int limit);
+	Flux<SttEvaluation> findAllByQuery(LocalDate fromDate, LocalDate toDate, int offset, int limit);
 
 	@Query("select e.* " +
 		"from t_ta_stt_evaluation e " +
@@ -47,7 +55,7 @@ public interface SttEvaluationRepository extends R2dbcRepository<SttEvaluation, 
 		"and e.evaluator_id = :evaluatorId " +
 		"order by id desc " +
 		"limit :offset, :limit")
-	Flux<SttEvaluation> findAllByParam(LocalDate fromDate, LocalDate toDate, int offset, int limit, Long evaluatorId);
+	Flux<SttEvaluation> findAllByQuery(LocalDate fromDate, LocalDate toDate, int offset, int limit, Long evaluatorId);
 
 	Flux<SttEvaluation> findAllByEnabledIsTrueOrderByIdDesc();
 
