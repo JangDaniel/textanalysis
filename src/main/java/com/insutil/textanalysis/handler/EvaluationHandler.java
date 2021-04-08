@@ -1,7 +1,6 @@
 package com.insutil.textanalysis.handler;
 
 import com.insutil.textanalysis.model.*;
-import com.insutil.textanalysis.model.dto.EvaluationSearchParam;
 import com.insutil.textanalysis.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +17,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -44,17 +42,23 @@ public class EvaluationHandler {
 		String now = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
 		String fromDate = request.queryParam("fromDate").orElse(now);
 		String toDate = request.queryParam("toDate").orElse(now);
-		String offset = request.queryParam("offset").orElse("0");
-		String limit = request.queryParam("limit").orElse("10");
+		String offset = request.queryParam("offset").orElse("none");
+		String limit = request.queryParam("limit").orElse("none");
 		String evaluator = request.queryParam("evaluator").orElse("all");
 
-		if (evaluator.equals("all")) {
-			return sttEvaluationRepository.findAllByParam(LocalDate.parse(fromDate), LocalDate.parse(toDate), Integer.parseInt(offset), Integer.parseInt(limit))
+		if (offset.equals("none")) {
+			return sttEvaluationRepository.findAllByQuery(LocalDate.parse(fromDate), LocalDate.parse(toDate))
 				.flatMap(this::getSttEvaluationWiths)
 				.collectList()
 				.flatMap(ServerResponse.ok()::bodyValue);
 		}
-		return sttEvaluationRepository.findAllByParam(LocalDate.parse(fromDate), LocalDate.parse(toDate), Integer.parseInt(offset), Integer.parseInt(limit), Long.parseLong(evaluator))
+		else if (evaluator.equals("all")) {
+			return sttEvaluationRepository.findAllByQuery(LocalDate.parse(fromDate), LocalDate.parse(toDate), Integer.parseInt(offset), Integer.parseInt(limit))
+				.flatMap(this::getSttEvaluationWiths)
+				.collectList()
+				.flatMap(ServerResponse.ok()::bodyValue);
+		}
+		return sttEvaluationRepository.findAllByQuery(LocalDate.parse(fromDate), LocalDate.parse(toDate), Integer.parseInt(offset), Integer.parseInt(limit), Long.parseLong(evaluator))
 			.flatMap(this::getSttEvaluationWiths)
 			.collectList()
 			.flatMap(ServerResponse.ok()::bodyValue);
