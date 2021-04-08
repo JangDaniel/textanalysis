@@ -8,12 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -56,6 +58,29 @@ public class EvaluationHandler {
 			.flatMap(this::getSttEvaluationWiths)
 			.collectList()
 			.flatMap(ServerResponse.ok()::bodyValue);
+	}
+
+	public Mono<ServerResponse> getEvaluationRate(ServerRequest request) {
+
+		String fromDateTime = request.pathVariable("fromDateTime");
+		String toDateTime = request.pathVariable("toDateTime");
+		
+		List<LocalDateTime> dateTimes = makeWhereDateParam(fromDateTime, toDateTime);
+		return sttEvaluationRepository.getEvaluationRateData(dateTimes.get(0), dateTimes.get(1))
+				.doOnNext(data -> data.setProcessingRate(Math.round(Float.valueOf(data.getProcessingRate()) * 100) + "%"))
+				.collectList()
+				.flatMap(ServerResponse.ok()::bodyValue);
+	}
+
+	private List<LocalDateTime> makeWhereDateParam(String fromDateTime, String toDateTime) {
+		if(StringUtils.hasText(fromDateTime) && StringUtils.hasText(toDateTime)) {
+			LocalDateTime paramFromTime = LocalDateTime.parse(fromDateTime, DateTimeFormatter.ofPattern("yyyy-MM-ddHH:mm"));
+			LocalDateTime paramToTime = LocalDateTime.parse(toDateTime, DateTimeFormatter.ofPattern("yyyy-MM-ddHH:mm"));
+
+			return Arrays.asList(paramFromTime, paramToTime);
+		}
+
+		return Arrays.asList(LocalDateTime.now(), LocalDateTime.now());
 	}
 
 	public Mono<ServerResponse> getTotalCountByQuery(ServerRequest request) {

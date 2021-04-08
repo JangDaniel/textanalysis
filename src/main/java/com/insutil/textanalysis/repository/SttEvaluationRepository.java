@@ -2,12 +2,14 @@ package com.insutil.textanalysis.repository;
 
 import com.insutil.textanalysis.model.AllocatedCount;
 import com.insutil.textanalysis.model.SttEvaluation;
+import com.insutil.textanalysis.model.dto.EvaluationRateData;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public interface SttEvaluationRepository extends R2dbcRepository<SttEvaluation, Long> {
 	@Query("select count(*) " +
@@ -26,6 +28,28 @@ public interface SttEvaluationRepository extends R2dbcRepository<SttEvaluation, 
 		"and e.evaluator_id = :evaluatorId " +
 		"order by e.id desc ")
 	Mono<Integer> getTotalCount(LocalDate fromDate, LocalDate toDate, Long evaluatorId);
+
+	@Query("select tot.user_id, tot.user_name, tot.allocation_count, tot.evaluation_count, format(tot.evaluation_count / tot.allocation_count, 2) as processing_rate " +
+			" from (" +
+			" select qa_user.user_id, qa_user.user_name, count(eval.id) as allocation_count, " +
+			"	count(case when state_id = 42 then 1 end) as evaluation_count " +
+			" from t_ta_stt_evaluation eval, (select * from t_qa_user where evaluator = 1 and active = 1 and enabled = 1) qa_user " +
+			" where DATE(eval.regist_date) between '2021-04-02 00:00:00' and '2021-04-02 23:59:59' " +
+			" and eval.evaluator_id = qa_user.id " +
+			" group by eval.evaluator_id " +
+			" ) tot ")
+	Flux<EvaluationRateData> getEvaluationRateData();
+
+	@Query("select tot.user_id, tot.user_name, tot.allocation_count, tot.evaluation_count, format(tot.evaluation_count / tot.allocation_count, 2) as processing_rate " +
+			" from (" +
+			" select qa_user.user_id, qa_user.user_name, count(eval.id) as allocation_count, " +
+			"	count(case when state_id = 42 then 1 end) as evaluation_count " +
+			" from t_ta_stt_evaluation eval, (select * from t_qa_user where evaluator = 1 and active = 1 and enabled = 1) qa_user " +
+			" where eval.regist_date between :fromLocalDateTime and :toLocalDateTime " +
+			" and eval.evaluator_id = qa_user.id " +
+			" group by eval.evaluator_id " +
+			" ) tot ")
+	Flux<EvaluationRateData> getEvaluationRateData(LocalDateTime fromLocalDateTime, LocalDateTime toLocalDateTime);
 
 	@Query("select * from t_ta_stt_evaluation where enabled is true order by id desc limit :offset, :limit")
 	Flux<SttEvaluation> findAllByLimit(int offset, int limit);

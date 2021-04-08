@@ -13,6 +13,7 @@ public class EvaluationRouter {
 	public RouterFunction<ServerResponse> evaluationRoute(EvaluationHandler handler) {
 		return RouterFunctions.route()
 			.GET("/api/evaluation", handler::findAll)
+				.GET("/api/evaluation/rate/{fromDateTime}/{toDateTime}", handler::getEvaluationRate)
 			.GET("/api/evaluation/query", handler::findAllByQuery)
 			.GET("/api/evaluation/count", handler::getTotalCountByQuery)
 			.GET("/api/evaluation/{id}", handler::findSttEvaluationById)
