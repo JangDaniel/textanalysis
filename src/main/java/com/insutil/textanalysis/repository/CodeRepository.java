@@ -36,4 +36,14 @@ public interface CodeRepository extends R2dbcRepository<Code, Long> {
             "where parent.id = child.parent_id) " +
             "select id from code)")
     Mono<Integer> activateCode(Long id, boolean isActivate);
+
+    @Query("select child.* " +
+        "from t_ins_code child " +
+        "left join t_ins_code parent on parent.id = child.parent_id " +
+        "where parent.enabled is true and child.enabled is true " +
+        "and parent.code_id = :codeId")
+    Flux<SimpleCode> findByParentCodeId(String codeId);
+
+    @Query("select * from t_ins_code where enabled is true and code_id = :codeId")
+    Mono<SimpleCode> findByCodeId(String codeId);
 }

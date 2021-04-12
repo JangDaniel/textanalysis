@@ -1,10 +1,11 @@
 package com.insutil.textanalysis.handler;
 
 import com.insutil.textanalysis.model.*;
+import com.insutil.textanalysis.model.dto.SimpleCode;
 import com.insutil.textanalysis.repository.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -20,7 +21,6 @@ import java.util.*;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class EvaluationHandler {
 	private final SttEvaluationRepository sttEvaluationRepository;
 	private final CriterionEvaluationRepository criterionEvaluationRepository;
@@ -28,9 +28,33 @@ public class EvaluationHandler {
 	private final SttContentsRepository sttContentsRepository;
 	private final ScriptCriteriaRepository scriptCriteriaRepository;
 	private final ScriptDetailRepository scriptDetailRepository;
-	private final SttSentencesRepository sttSentencesRepository;
 	private final ProductRepository productRepository;
 	private final UserRepository userRepository;
+	private final SimpleCode evaluationDoneState;
+
+	@Autowired
+	public EvaluationHandler(
+		SttEvaluationRepository sttEvaluationRepository,
+		CriterionEvaluationRepository criterionEvaluationRepository,
+		ScriptMatchRepository scriptMatchRepository,
+		SttContentsRepository sttContentsRepository,
+		ScriptCriteriaRepository scriptCriteriaRepository,
+		ScriptDetailRepository scriptDetailRepository,
+		ProductRepository productRepository,
+		UserRepository userRepository,
+		CodeRepository codeRepository
+	) {
+		this.sttEvaluationRepository = sttEvaluationRepository;
+		this.criterionEvaluationRepository = criterionEvaluationRepository;
+		this.scriptMatchRepository = scriptMatchRepository;
+		this.sttContentsRepository = sttContentsRepository;
+		this.scriptCriteriaRepository = scriptCriteriaRepository;
+		this.scriptDetailRepository = scriptDetailRepository;
+		this.productRepository = productRepository;
+		this.userRepository = userRepository;
+		this.evaluationDoneState = codeRepository.findByCodeId("ESC_DONE").block();
+	}
+
 
 	public Mono<ServerResponse> findAll(ServerRequest request) {
 		return sttEvaluationRepository.findAllByEnabledIsTrueOrderByIdDesc()
@@ -59,6 +83,24 @@ public class EvaluationHandler {
 				.flatMap(ServerResponse.ok()::bodyValue);
 		}
 		return sttEvaluationRepository.findAllByQuery(LocalDate.parse(fromDate), LocalDate.parse(toDate), Integer.parseInt(offset), Integer.parseInt(limit), Long.parseLong(evaluator))
+			.flatMap(this::getSttEvaluationWiths)
+			.collectList()
+			.flatMap(ServerResponse.ok()::bodyValue);
+	}
+	public Mono<ServerResponse> findAllByNotAllocated(ServerRequest request) {
+		String now = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
+		String fromDate = request.queryParam("fromDate").orElse(now);
+		String toDate = request.queryParam("toDate").orElse(now);
+		String offset = request.queryParam("offset").orElse("none");
+		String limit = request.queryParam("limit").orElse("none");
+
+		if (offset.equals("none")) {
+			return sttEvaluationRepository.findAllByNotAllocated(LocalDate.parse(fromDate), LocalDate.parse(toDate))
+				.flatMap(this::getSttEvaluationWiths)
+				.collectList()
+				.flatMap(ServerResponse.ok()::bodyValue);
+		}
+		return sttEvaluationRepository.findAllByNotAllocated(LocalDate.parse(fromDate), LocalDate.parse(toDate), Integer.parseInt(offset), Integer.parseInt(limit))
 			.flatMap(this::getSttEvaluationWiths)
 			.collectList()
 			.flatMap(ServerResponse.ok()::bodyValue);
@@ -97,6 +139,13 @@ public class EvaluationHandler {
 		}
 		return sttEvaluationRepository.getTotalCount(LocalDate.parse(fromDate), LocalDate.parse(toDate), Long.parseLong(evaluator)).flatMap(ServerResponse.ok()::bodyValue);
 
+	}
+
+	public Mono<ServerResponse> getTotalCountByNotAllocated(ServerRequest request) {
+		String now = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
+		String fromDate = request.queryParam("fromDate").orElse(now);
+		String toDate = request.queryParam("toDate").orElse(now);
+		return sttEvaluationRepository.getTotalCountByNotAllocated(LocalDate.parse(fromDate), LocalDate.parse(toDate)).flatMap(ServerResponse.ok()::bodyValue);
 	}
 
 	public Mono<ServerResponse> findSttEvaluationById(ServerRequest request) {
@@ -295,7 +344,7 @@ public class EvaluationHandler {
 			.flatMap(sttEvaluation ->
 				Mono.just(sttEvaluation).zipWith(
 					getCriterionEvaluations(sttEvaluation.getId())
-						.reduce(0, (acc, criterionEvaluation) -> acc + criterionEvaluation.getScore())
+						.reduce(0, (acc, criterionEvaluation) -> acc + (criterionEvaluation.getScore() == null ? 0 : criterionEvaluation.getScore()))
 				)
 				.map(tuple -> tuple.getT1().withScore(tuple.getT2()))
 			)
@@ -375,6 +424,17 @@ public class EvaluationHandler {
 		return sttEvaluationRepository.findById(Long.valueOf(id))
 			.flatMap(origin ->
 				request.bodyToMono(SttEvaluation.class)
+					.map(sttEvaluation -> {
+						if (origin.getEvaluationDate() == null && Objects.equals(sttEvaluation.getStateId(), evaluationDoneState.getId())) {
+							// 평가 완료 시 평가일 입력
+							sttEvaluation.setEvaluationDate(LocalDate.now());
+						}
+						if (origin.getEvaluatorId() == null && sttEvaluation.getEvaluatorId() != null) {
+							// 평가사 수동 입력
+							sttEvaluation.setAllocationDate(LocalDate.now());
+						}
+						return sttEvaluation;
+					})
 					.flatMap(sttEvaluation ->
 						sttEvaluationRepository.save(origin.update(sttEvaluation))
 						.zipWith(updateCriterionEvaluations(sttEvaluation.getCriterionEvaluations()).collectList())
@@ -397,5 +457,29 @@ public class EvaluationHandler {
 					}
 				}
 			);
+	}
+
+	public Mono<ServerResponse> updateSimpleSttEvaluation(ServerRequest request) {
+		String id = request.pathVariable("id");
+		if (!NumberUtils.isDigits(id)) {
+			return ServerResponse.badRequest().bodyValue(id);
+		}
+		return sttEvaluationRepository.findById(Long.valueOf(id))
+			.flatMap(origin ->
+				request.bodyToMono(SttEvaluation.class)
+					.map(sttEvaluation -> {
+						if (origin.getEvaluatorId() == null && sttEvaluation.getEvaluatorId() != null) {
+							// 평가사 수동 입력
+							sttEvaluation.setAllocationDate(LocalDate.now());
+						}
+						return sttEvaluation;
+					})
+					.flatMap(sttEvaluation ->
+						sttEvaluationRepository.save(origin.update(sttEvaluation))
+					)
+					.flatMap(this::getSttEvaluationWiths)
+			)
+			.flatMap(ServerResponse.ok()::bodyValue)
+			.switchIfEmpty(ServerResponse.status(HttpStatus.NOT_FOUND).build());
 	}
 }
