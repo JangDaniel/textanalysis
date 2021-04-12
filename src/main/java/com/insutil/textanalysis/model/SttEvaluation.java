@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,6 +26,8 @@ public class SttEvaluation {
 	private Long stateId;
 	private Long resultId;
 	private Long evaluatorId;
+	private LocalDate allocationDate;
+	private LocalDate evaluationDate;
 	private String opinion;
 	private Long registUser;
 	private Long updateUser;
@@ -62,6 +65,8 @@ public class SttEvaluation {
 		if (target.sttId != null) this.sttId = target.sttId;
 		if (target.insuranceType != null) this.insuranceType = target.insuranceType;
 		if (target.stateId != null) this.stateId = target.stateId;
+		if (target.allocationDate != null) this.allocationDate = target.allocationDate;
+		if (target.evaluationDate != null) this.evaluationDate = target.evaluationDate;
 		if (target.resultId != null) this.resultId = target.resultId;
 		if (target.evaluatorId != null) this.evaluatorId = target.evaluatorId;
 		if (target.opinion != null) this.opinion = target.opinion;

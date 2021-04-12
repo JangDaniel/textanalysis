@@ -14,17 +14,19 @@ import java.time.LocalDateTime;
 public interface SttEvaluationRepository extends R2dbcRepository<SttEvaluation, Long> {
 	@Query("select count(*) " +
 		"from t_ta_stt_evaluation e " +
-		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+//		"left join t_ta_stt_contents s on s.id = e.stt_id " +
 		"where e.enabled is true " +
-		"and s.call_date between :fromDate and :toDate " +
+//		"and s.call_date between :fromDate and :toDate " +
+		"and e.allocation_date between :fromDate and :toDate " +
 		"order by e.id desc ")
 	Mono<Integer> getTotalCount(LocalDate fromDate, LocalDate toDate);
 
 	@Query("select count(*) " +
 		"from t_ta_stt_evaluation e " +
-		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+//		"left join t_ta_stt_contents s on s.id = e.stt_id " +
 		"where e.enabled is true " +
-		"and s.call_date between :fromDate and :toDate " +
+//		"and s.call_date between :fromDate and :toDate " +
+		"and e.allocation_date between :fromDate and :toDate " +
 		"and e.evaluator_id = :evaluatorId " +
 		"order by e.id desc ")
 	Mono<Integer> getTotalCount(LocalDate fromDate, LocalDate toDate, Long evaluatorId);
@@ -56,30 +58,61 @@ public interface SttEvaluationRepository extends R2dbcRepository<SttEvaluation, 
 
 	@Query("select e.* " +
 		"from t_ta_stt_evaluation e " +
-		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+//		"left join t_ta_stt_contents s on s.id = e.stt_id " +
 		"where e.enabled is true " +
-		"and s.call_date between :fromDate and :toDate " +
+//		"and s.call_date between :fromDate and :toDate " +
+		"and e.allocation_date between :fromDate and :toDate " +
 		"order by e.id desc")
 	Flux<SttEvaluation> findAllByQuery(LocalDate fromDate, LocalDate toDate);
 
 	@Query("select e.* " +
 		"from t_ta_stt_evaluation e " +
-		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+//		"left join t_ta_stt_contents s on s.id = e.stt_id " +
 		"where e.enabled is true " +
-		"and s.call_date between :fromDate and :toDate " +
+//		"and s.call_date between :fromDate and :toDate " +
+		"and e.allocation_date between :fromDate and :toDate " +
 		"order by e.id desc " +
 		"limit :offset, :limit")
 	Flux<SttEvaluation> findAllByQuery(LocalDate fromDate, LocalDate toDate, int offset, int limit);
 
 	@Query("select e.* " +
 		"from t_ta_stt_evaluation e " +
-		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+//		"left join t_ta_stt_contents s on s.id = e.stt_id " +
 		"where e.enabled is true " +
-		"and s.call_date between :fromDate and :toDate " +
+//		"and s.call_date between :fromDate and :toDate " +
+		"and e.allocation_date between :fromDate and :toDate " +
 		"and e.evaluator_id = :evaluatorId " +
 		"order by id desc " +
 		"limit :offset, :limit")
 	Flux<SttEvaluation> findAllByQuery(LocalDate fromDate, LocalDate toDate, int offset, int limit, Long evaluatorId);
+
+	@Query("select count(*) " +
+		"from t_ta_stt_evaluation e " +
+		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+		"where e.enabled is true " +
+		"and s.call_date between :fromDate and :toDate " +
+		"and e.evaluator_id is null " +
+		"order by e.id desc ")
+	Mono<Integer> getTotalCountByNotAllocated(LocalDate fromDate, LocalDate toDate);
+
+	@Query("select e.* " +
+		"from t_ta_stt_evaluation e " +
+		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+		"where e.enabled is true " +
+		"and s.call_date between :fromDate and :toDate " +
+		"and e.evaluator_id is null " +
+		"order by id desc")
+	Flux<SttEvaluation> findAllByNotAllocated(LocalDate fromDate, LocalDate toDate);
+
+	@Query("select e.* " +
+		"from t_ta_stt_evaluation e " +
+		"left join t_ta_stt_contents s on s.id = e.stt_id " +
+		"where e.enabled is true " +
+		"and s.call_date between :fromDate and :toDate " +
+		"and e.evaluator_id is null " +
+		"order by id desc " +
+		"limit :offset, :limit")
+	Flux<SttEvaluation> findAllByNotAllocated(LocalDate fromDate, LocalDate toDate, int offset, int limit);
 
 	Flux<SttEvaluation> findAllByEnabledIsTrueOrderByIdDesc();
 

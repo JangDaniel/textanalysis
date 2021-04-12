@@ -65,6 +65,7 @@ public class AutomaticAllocationHandler {
 									.sttId(sttId)
 									.insuranceType(allocationCount.getInsuranceType())
 									.evaluatorId(allocationCount.getEvaluatorId())
+									.allocationDate(LocalDate.now())
 								.build()
 							)
 						)
