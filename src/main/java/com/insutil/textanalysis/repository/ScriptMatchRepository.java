@@ -8,7 +8,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface ScriptMatchRepository extends R2dbcRepository<ScriptMatch, Long> {
-	@Query("select sm.script_detail_id, sd.script, sm.mapped_script, ss.unit_sentence, sm.similarity_score, sd.score as base_score, sc.name as criterion_name, sc.sort as criterion_sort " +
+	@Query("select sm.script_detail_id, sd.script, sm.mapped_script, ss.unit_sentence, max(sm.similarity_score) as similarity_score, sd.score as base_score, sc.name as criterion_name, sc.sort as criterion_sort " +
 		"from t_ta_stt_script_match sm " +
 		"left join t_ta_stt_sentences ss on ss.id = sm.stt_sentence_id " +
 		"left join t_ta_script_detail sd on sd.id = sm.script_detail_id " +
